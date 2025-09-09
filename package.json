@@ -1,0 +1,124 @@
+{
+  "name": "obsidianforcode",
+  "displayName": "Obsidian for Code",
+  "description": "Obsidian-like functionality for VS Code",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "obsd.openOrCreateWikiLink",
+        "title": "Open or Create Wiki Link"
+      },
+      {
+        "command": "obsd.insertDate",
+        "title": "Insert Date"
+      },
+      {
+        "command": "obsd.insertTime",
+        "title": "Insert Time"
+      },
+      {
+        "command": "obsd.preview",
+        "title": "Preview Markdown"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "obsd.openOrCreateWikiLink",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "editorTextFocus && obsd.inWikiLink"
+      },
+      {
+        "command": "obsd.insertDate",
+        "key": "alt+d",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "obsd.insertTime",
+        "key": "alt+t",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Obsidian for Code",
+      "properties": {
+        "obsd.vaultRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Vault root directory path"
+        },
+        "obsd.noteExtension": {
+          "type": "string",
+          "default": ".md",
+          "description": "Note file extension"
+        },
+        "obsd.slugStrategy": {
+          "type": "string",
+          "enum": [
+            "passthrough",
+            "kebab-case",
+            "snake_case"
+          ],
+          "default": "passthrough",
+          "description": "File name transformation strategy"
+        },
+        "obsd.dateFormat": {
+          "type": "string",
+          "default": "YYYY-MM-DD",
+          "description": "Date insertion format"
+        },
+        "obsd.timeFormat": {
+          "type": "string",
+          "default": "HH:mm",
+          "description": "Time insertion format"
+        },
+        "obsd.template": {
+          "type": "string",
+          "default": "",
+          "description": "New note template"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "mocha --require ts-node/register tests/unit/**/*.test.ts",
+    "test:integration": "mocha --require ts-node/register tests/integration/**/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.2",
+    "@types/chai-as-promised": "^8.0.2",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.103.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "@vscode/test-electron": "^2.2.0",
+    "chai": "^6.0.1",
+    "chai-as-promised": "^8.0.2",
+    "eslint": "^8.28.0",
+    "mocha": "^9.2.1",
+    "ts-node": "^10.9.0",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "@ig3/markdown-it-wikilinks": "^1.0.0",
+    "markdown-it": "^13.0.1"
+  }
+}

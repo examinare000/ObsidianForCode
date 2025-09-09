@@ -1,0 +1,32 @@
+# VS Code Extension Development
+out/
+node_modules/
+*.vsix
+
+# TypeScript
+*.tsbuildinfo
+*.js.map
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/settings.json
+.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime
+.nyc_output/
+coverage/
+
+# Claude local settings (personal)
+.claude/settings.local.json
