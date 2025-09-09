@@ -1,0 +1,221 @@
+import { describe, it, beforeEach } from 'mocha';
+import { expect } from 'chai';
+import { WikiLinkProcessor } from '../../../src/processors/WikiLinkProcessor';
+
+// VS Code APIのモック
+class MockUri {
+    constructor(public fsPath: string, public scheme: string = 'file') {}
+    
+    static file(path: string) {
+        return new MockUri(path);
+    }
+    
+    toString() {
+        return `${this.scheme}://${this.fsPath}`;
+    }
+}
+
+class MockRange {
+    constructor(public start: any, public end: any) {}
+}
+
+class MockPosition {
+    constructor(public line: number, public character: number) {}
+}
+
+class MockFileSystemError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'FileSystemError';
+    }
+}
+
+// モックのファイルタイプ
+const MockFileType = {
+    File: 1,
+    Directory: 2
+};
+
+// VS Code workspace.fsのモック
+const mockWorkspaceFs = {
+    stat: async (uri: any) => {
+        // テスト用のファイル存在パターン
+        if (uri.fsPath.includes('existing-file.md') || 
+            uri.fsPath.includes('Another Page.md')) {
+            return { type: MockFileType.File };
+        }
+        throw new MockFileSystemError('File not found');
+    },
+    writeFile: async (uri: any, content: any) => {
+        // モック実装: 実際には何もしない
+    },
+    createDirectory: async (uri: any) => {
+        // モック実装: 実際には何もしない
+    }
+} as any;
+
+// グローバルなvsCodeモック
+const mockVscode = {
+    Uri: MockUri,
+    Range: MockRange,
+    Position: MockPosition,
+    FileSystemError: MockFileSystemError,
+    FileType: MockFileType
+};
+
+describe('WikiLinkProcessor - File Resolution', () => {
+    let processor: WikiLinkProcessor;
+    const testVaultRoot = '/test/vault';
+    const currentDocumentUri = MockUri.file('/test/vault/current-doc.md');
+
+    beforeEach(() => {
+        processor = new WikiLinkProcessor({ slugStrategy: 'passthrough' });
+    });
+
+    describe('resolveWikiLink', () => {
+        it('シンプルなWikiLinkを正しいファイルパスに解決する', async () => {
+            const linkText = 'Simple Page';
+            const expectedPath = '/test/vault/Simple Page.md';
+            
+            const result = await processor.resolveWikiLink(linkText, currentDocumentUri, {
+                vaultRoot: testVaultRoot,
+                noteExtension: '.md'
+            });
+            
+            expect(result.fsPath).to.equal(expectedPath);
+        });
+
+        it('別名付きWikiLinkを正しいファイルパスに解決する', async () => {
+            const linkText = 'Target Page|Display Name';
+            const expectedPath = '/test/vault/Target Page.md';
+            
+            const result = await processor.resolveWikiLink(linkText, currentDocumentUri, {
+                vaultRoot: testVaultRoot,
+                noteExtension: '.md'
+            });
+            
+            expect(result.fsPath).to.equal(expectedPath);
+        });
+
+        it('kebab-case戦略でファイル名を変換する', async () => {
+            const processorKebab = new WikiLinkProcessor({ slugStrategy: 'kebab-case' });
+            const linkText = 'My Test Page';
+            const expectedPath = '/test/vault/my-test-page.md';
+            
+            const result = await processorKebab.resolveWikiLink(linkText, currentDocumentUri, {
+                vaultRoot: testVaultRoot,
+                noteExtension: '.md'
+            });
+            
+            expect(result.fsPath).to.equal(expectedPath);
+        });
+
+        it('異なるファイル拡張子に対応する', async () => {
+            const linkText = 'Document';
+            const expectedPath = '/test/vault/Document.txt';
+            
+            const result = await processor.resolveWikiLink(linkText, currentDocumentUri, {
+                vaultRoot: testVaultRoot,
+                noteExtension: '.txt'
+            });
+            
+            expect(result.fsPath).to.equal(expectedPath);
+        });
+    });
+
+    describe('fileExists', () => {
+        it('存在するファイルでtrueを返す', async () => {
+            const uri = MockUri.file('/test/vault/existing-file.md');
+            
+            const exists = await processor.fileExists(uri, mockWorkspaceFs);
+            
+            expect(exists).to.be.true;
+        });
+
+        it('存在しないファイルでfalseを返す', async () => {
+            const uri = MockUri.file('/test/vault/non-existing-file.md');
+            
+            const exists = await processor.fileExists(uri, mockWorkspaceFs);
+            
+            expect(exists).to.be.false;
+        });
+    });
+
+    describe('createNewFile', () => {
+        it('指定されたパスに新しいファイルを作成する', async () => {
+            const uri = MockUri.file('/test/vault/new-file.md');
+            const template = '# New File\n\nContent here...';
+            
+            // エラーが発生しないことを確認
+            try {
+                await processor.createNewFile(uri, template, mockWorkspaceFs);
+                // 成功した場合は何もしない
+            } catch (error) {
+                expect.fail('createNewFile should not throw an error');
+            }
+        });
+
+        it('空のテンプレートで新しいファイルを作成する', async () => {
+            const uri = MockUri.file('/test/vault/empty-file.md');
+            
+            // エラーが発生しないことを確認
+            try {
+                await processor.createNewFile(uri, '', mockWorkspaceFs);
+                // 成功した場合は何もしない
+            } catch (error) {
+                expect.fail('createNewFile should not throw an error');
+            }
+        });
+    });
+
+    describe('findWikiLinks', () => {
+        it('ドキュメント内のすべてのWikiLinkを検出する', async () => {
+            const documentText = `
+# Test Document
+
+This is a [[Simple Link]] and here is [[Another Page]].
+Also check [[Complex Page|Display Name]] and [[Page#Section]].
+`;
+            
+            const mockDocument = {
+                getText: () => documentText,
+                uri: currentDocumentUri,
+                positionAt: (offset: number) => ({ line: 0, character: offset }),
+                lineCount: 5
+            } as any;
+            
+            const wikiLinks = await processor.findWikiLinks(mockDocument, {
+                vaultRoot: testVaultRoot,
+                noteExtension: '.md'
+            }, mockWorkspaceFs);
+            
+            expect(wikiLinks).to.have.length(4);
+            expect(wikiLinks[0].parsed.pageName).to.equal('Simple Link');
+            expect(wikiLinks[1].parsed.pageName).to.equal('Another Page');
+            expect(wikiLinks[2].parsed.pageName).to.equal('Complex Page');
+            expect(wikiLinks[2].parsed.displayName).to.equal('Display Name');
+            expect(wikiLinks[3].parsed.pageName).to.equal('Page');
+            expect(wikiLinks[3].parsed.heading).to.equal('Section');
+        });
+
+        it('WikiLinkが存在しないドキュメントで空配列を返す', async () => {
+            const documentText = `
+# Test Document
+
+This document has no wiki links, just regular text.
+`;
+            
+            const mockDocument = {
+                getText: () => documentText,
+                uri: currentDocumentUri
+            } as any;
+            
+            const wikiLinks = await processor.findWikiLinks(mockDocument, {
+                vaultRoot: testVaultRoot,
+                noteExtension: '.md'
+            }, mockWorkspaceFs);
+            
+            expect(wikiLinks).to.have.length(0);
+        });
+    });
+});
