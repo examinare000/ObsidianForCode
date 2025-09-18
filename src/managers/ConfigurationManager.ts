@@ -44,15 +44,15 @@ export class ConfigurationManager {
     constructor(private config: WorkspaceConfiguration) {}
 
     getVaultRoot(): string {
-        return this.config.get<string>('obsd.vaultRoot', '');
+        return this.config.get<string>('vaultRoot', '');
     }
 
     getNoteExtension(): string {
-        return this.config.get<string>('obsd.noteExtension', '.md');
+        return this.config.get<string>('noteExtension', '.md');
     }
 
     getSlugStrategy(): SlugStrategy {
-        const strategy = this.config.get<string>('obsd.slugStrategy', 'passthrough');
+        const strategy = this.config.get<string>('slugStrategy', 'passthrough');
         
         if (this.isValidSlugStrategy(strategy)) {
             return strategy as SlugStrategy;
@@ -62,15 +62,15 @@ export class ConfigurationManager {
     }
 
     getDateFormat(): string {
-        return this.config.get<string>('obsd.dateFormat', 'YYYY-MM-DD');
+        return this.config.get<string>('dateFormat', 'YYYY-MM-DD');
     }
 
     getTimeFormat(): string {
-        return this.config.get<string>('obsd.timeFormat', 'HH:mm');
+        return this.config.get<string>('timeFormat', 'HH:mm');
     }
 
     getTemplate(): string {
-        return this.config.get<string>('obsd.template', '');
+        return this.config.get<string>('template', '');
     }
 
     getConfiguration(): ObsdConfiguration {
