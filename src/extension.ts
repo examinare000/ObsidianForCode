@@ -14,56 +14,94 @@ function sanitizeFileName(fileName: string): string {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('ObsidianForCode extension is now active');
-    
+    // Configuration Manager初期化
+    let configManager: ConfigurationManager;
     try {
-        // Configuration Manager初期化
-        const configManager = new ConfigurationManager(vscode.workspace.getConfiguration('obsd'));
-        const dateTimeFormatter = new DateTimeFormatter();
-        
-        // WikiLink Context Provider初期化
-        const contextProvider = new WikiLinkContextProvider(context);
-        
-        // WikiLink DocumentLinkProvider登録
+        configManager = new ConfigurationManager(vscode.workspace.getConfiguration('obsd'));
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to initialize ConfigurationManager');
+        return;
+    }
+
+    // DateTimeFormatter初期化
+    let dateTimeFormatter: DateTimeFormatter;
+    try {
+        dateTimeFormatter = new DateTimeFormatter();
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to initialize DateTimeFormatter');
+        return;
+    }
+
+    // WikiLink Context Provider初期化
+    let contextProvider: WikiLinkContextProvider;
+    try {
+        contextProvider = new WikiLinkContextProvider(context);
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to initialize WikiLinkContextProvider');
+        return;
+    }
+
+    // WikiLink DocumentLinkProvider登録
+    let linkProviderDisposable: vscode.Disposable;
+    try {
         const wikiLinkProvider = new WikiLinkDocumentLinkProvider(configManager);
-        const linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
-            { scheme: 'file', language: 'markdown' }, 
+        linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
+            { scheme: 'file', language: 'markdown' },
             wikiLinkProvider
         );
-        
-        // Commands登録
-        const commands = [
-            vscode.commands.registerCommand('obsd.openOrCreateWikiLink', () => 
-                openOrCreateWikiLink(configManager)
-            ),
-            vscode.commands.registerCommand('obsd.insertDate', () => 
-                insertDate(configManager, dateTimeFormatter)
-            ),
-            vscode.commands.registerCommand('obsd.insertTime', () => 
-                insertTime(configManager, dateTimeFormatter)
-            ),
-            vscode.commands.registerCommand('obsd.preview', () => 
-                showPreview()
-            )
-        ];
-        
-        // Context subscriptions
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to register WikiLinkDocumentLinkProvider');
+        return;
+    }
+
+    // Commands登録
+    let commands: vscode.Disposable[];
+    try {
+        const openCommand = vscode.commands.registerCommand('obsd.openOrCreateWikiLink', () => {
+            return openOrCreateWikiLink(configManager);
+        });
+
+        const dateCommand = vscode.commands.registerCommand('obsd.insertDate', () => {
+            return insertDate(configManager, dateTimeFormatter);
+        });
+
+        const timeCommand = vscode.commands.registerCommand('obsd.insertTime', () => {
+            return insertTime(configManager, dateTimeFormatter);
+        });
+
+        const previewCommand = vscode.commands.registerCommand('obsd.preview', () => {
+            return showPreview();
+        });
+
+        commands = [openCommand, dateCommand, timeCommand, previewCommand];
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to register commands');
+        return;
+    }
+
+    // Context subscriptions
+    try {
         context.subscriptions.push(
             linkProviderDisposable,
             ...commands
         );
-        
-        // 設定変更の監視
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to add subscriptions');
+        return;
+    }
+
+    // 設定変更の監視
+    try {
         const configChangeListener = vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('obsd')) {
                 configManager.triggerConfigurationChanged();
             }
         });
-        
+
         context.subscriptions.push(configChangeListener);
     } catch (error) {
-        console.error('Failed to activate ObsidianForCode:', error);
-        vscode.window.showErrorMessage('ObsidianForCode failed to activate');
+        vscode.window.showErrorMessage('Failed to set up configuration change listener');
+        return;
     }
 }
 
@@ -86,7 +124,6 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
         // ワークスペースフォルダーの事前チェック
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
-            console.warn('[WikiLinkProvider] No workspace folder available for document links');
             return [];
         }
 
@@ -111,7 +148,7 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 const vaultRoot = this.configManager.getVaultRoot();
 
                 let uri: vscode.Uri;
-                
+
                 if (vaultRoot && vaultRoot.trim() !== '') {
                     if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
                         const filePath = `${vaultRoot}/${fileName}${extension}`;
@@ -127,7 +164,6 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
                     if (workspaceFolder) {
                         uri = vscode.Uri.joinPath(workspaceFolder.uri, `${fileName}${extension}`);
                     } else {
-                        console.warn(`[WikiLinkProvider] No workspace folder found for link: ${linkText}`);
                         continue;
                     }
                 }
@@ -145,15 +181,12 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
 
 // Command implementations
 async function openOrCreateWikiLink(configManager: ConfigurationManager): Promise<void> {
-    console.log('[Command] openOrCreateWikiLink called');
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-        console.log('[Command] No active editor');
         return;
     }
-    
+
     const position = editor.selection.active;
-    console.log(`[Command] Cursor position: ${position.line}:${position.character}`);
     const linkText = getWikiLinkAtPosition(editor.document, position);
     
     if (!linkText) {
@@ -178,12 +211,8 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
-            console.log('[Command] Error: No workspace folder');
             return;
         }
-
-        console.log(`[Command] Workspace folder: ${workspaceFolder.uri.fsPath}`);
-        console.log(`[Command] VaultRoot: "${vaultRoot}", FileName: "${fileName}", Extension: "${extension}"`);
 
         // ファイルURI作成
         let uri: vscode.Uri;
@@ -201,8 +230,6 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
             uri = vscode.Uri.joinPath(workspaceFolder.uri, `${fileName}${extension}`);
         }
 
-        console.log(`[Command] Target file URI: ${uri.toString()}`);
-        console.log(`[Command] Target file path: ${uri.fsPath}`);
         
         try {
             await vscode.workspace.fs.stat(uri);
@@ -287,6 +314,4 @@ function getWikiLinkAtPosition(document: vscode.TextDocument, position: vscode.P
     return match[1];
 }
 
-export function deactivate() {
-    console.log('ObsidianForCode extension is now deactivated');
-}
+export function deactivate() {}
