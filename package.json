@@ -82,12 +82,6 @@
         "command": "obsd.insertTime",
         "key": "alt+t",
         "when": "editorTextFocus"
-      },
-      {
-        "command": "obsd.openDailyNote",
-        "key": "ctrl+shift+d",
-        "mac": "cmd+shift+d",
-        "when": "editorTextFocus"
       }
     ],
     "configuration": {
@@ -137,6 +131,17 @@
           "type": "string",
           "default": "dailynotes",
           "description": "Daily notes directory path (relative to vault root)"
+        },
+        "obsd.dailyNoteEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable DailyNote functionality"
+        },
+        "obsd.dailyNoteKeybinding": {
+          "type": "string",
+          "default": "ctrl+shift+d",
+          "description": "Preferred keyboard shortcut for opening daily note. To set this: 1) Open Command Palette (Ctrl+Shift+P), 2) Type 'Preferences: Open Keyboard Shortcuts', 3) Search 'obsd.openDailyNote', 4) Set your preferred key combination",
+          "markdownDescription": "Preferred keyboard shortcut for opening daily note.\n\n**To set this:**\n1. Open Command Palette (`Ctrl+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search `obsd.openDailyNote`\n4. Set your preferred key combination"
         }
       }
     }

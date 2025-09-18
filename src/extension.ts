@@ -42,13 +42,15 @@ export function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    // DailyNote Manager初期化
-    let dailyNoteManager: DailyNoteManager;
-    try {
-        dailyNoteManager = new DailyNoteManager(configManager, dateTimeFormatter);
-    } catch (error) {
-        vscode.window.showErrorMessage('Failed to initialize DailyNoteManager');
-        return;
+    // DailyNote Manager初期化（設定により条件付き）
+    let dailyNoteManager: DailyNoteManager | undefined;
+    if (configManager.getDailyNoteEnabled()) {
+        try {
+            dailyNoteManager = new DailyNoteManager(configManager, dateTimeFormatter);
+        } catch (error) {
+            vscode.window.showErrorMessage('Failed to initialize DailyNoteManager');
+            return;
+        }
     }
 
     // WikiLink DocumentLinkProvider登録
@@ -83,21 +85,27 @@ export function activate(context: vscode.ExtensionContext) {
             return showPreview();
         });
 
-        const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
-                vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
-                return;
-            }
+        // DailyNoteコマンドは設定により条件付きで登録
+        let dailyNoteCommand: vscode.Disposable | undefined;
+        if (dailyNoteManager) {
+            dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                if (!workspaceFolder) {
+                    vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
+                    return;
+                }
 
-            try {
-                await dailyNoteManager.openOrCreateDailyNote(workspaceFolder);
-            } catch (error) {
-                vscode.window.showErrorMessage('Failed to open daily note');
-            }
-        });
+                try {
+                    await dailyNoteManager!.openOrCreateDailyNote(workspaceFolder);
+                } catch (error) {
+                    vscode.window.showErrorMessage('Failed to open daily note');
+                }
+            });
+        }
 
-        commands = [openCommand, dateCommand, timeCommand, previewCommand, dailyNoteCommand];
+        commands = dailyNoteCommand
+            ? [openCommand, dateCommand, timeCommand, previewCommand, dailyNoteCommand]
+            : [openCommand, dateCommand, timeCommand, previewCommand];
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register commands');
         return;
