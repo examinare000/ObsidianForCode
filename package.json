@@ -137,11 +137,12 @@
           "default": true,
           "description": "Enable or disable DailyNote functionality"
         },
-        "obsd.dailyNoteKeybinding": {
+        "obsd.dailyNoteKeybindingGuide": {
           "type": "string",
-          "default": "ctrl+shift+d",
-          "description": "Preferred keyboard shortcut for opening daily note. To set this: 1) Open Command Palette (Ctrl+Shift+P), 2) Type 'Preferences: Open Keyboard Shortcuts', 3) Search 'obsd.openDailyNote', 4) Set your preferred key combination",
-          "markdownDescription": "Preferred keyboard shortcut for opening daily note.\n\n**To set this:**\n1. Open Command Palette (`Ctrl+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search `obsd.openDailyNote`\n4. Set your preferred key combination"
+          "default": "Follow the steps below",
+          "readonly": true,
+          "description": "How to configure DailyNote keyboard shortcut",
+          "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\n\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search for `obsd.openDailyNote`\n4. Click the `+` icon to set your preferred key combination\n\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\n\n*This setting is for guidance only and cannot be edited.*"
         }
       }
     }

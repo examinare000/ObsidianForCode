@@ -40,40 +40,19 @@ describe('Configurable DailyNote Features', () => {
             expect(enabled).to.be.false;
         });
 
-        it('should return default keybinding setting', () => {
+        it('should not expose keybinding configuration method', () => {
             const { ConfigurationManager } = require('../../../src/managers/ConfigurationManager');
 
             const mockConfig = {
-                get: (key: string, defaultValue?: any) => {
-                    if (key === 'dailyNoteKeybinding') return 'ctrl+shift+d';
-                    return defaultValue;
-                },
+                get: (key: string, defaultValue?: any) => defaultValue,
                 has: () => true,
                 update: () => Promise.resolve()
             };
 
             const configManager = new ConfigurationManager(mockConfig);
-            const keybinding = configManager.getDailyNoteKeybinding();
 
-            expect(keybinding).to.equal('ctrl+shift+d');
-        });
-
-        it('should return custom keybinding setting', () => {
-            const { ConfigurationManager } = require('../../../src/managers/ConfigurationManager');
-
-            const mockConfig = {
-                get: (key: string, defaultValue?: any) => {
-                    if (key === 'dailyNoteKeybinding') return 'cmd+alt+d';
-                    return defaultValue;
-                },
-                has: () => true,
-                update: () => Promise.resolve()
-            };
-
-            const configManager = new ConfigurationManager(mockConfig);
-            const keybinding = configManager.getDailyNoteKeybinding();
-
-            expect(keybinding).to.equal('cmd+alt+d');
+            // キーバインド設定メソッドは存在しないはず
+            expect(configManager.getDailyNoteKeybinding).to.be.undefined;
         });
     });
 
@@ -112,7 +91,6 @@ describe('Configurable DailyNote Features', () => {
             // DailyNote機能が有効な場合のシナリオ
             const mockConfigManager = {
                 getDailyNoteEnabled: () => true,
-                getDailyNoteKeybinding: () => 'ctrl+shift+d',
                 getDateFormat: () => 'YYYY-MM-DD',
                 getNoteExtension: () => '.md',
                 getDailyNotePath: () => 'dailynotes',
@@ -121,21 +99,18 @@ describe('Configurable DailyNote Features', () => {
             };
 
             const enabled = mockConfigManager.getDailyNoteEnabled();
-            const keybinding = mockConfigManager.getDailyNoteKeybinding();
 
             expect(enabled).to.be.true;
-            expect(keybinding).to.equal('ctrl+shift+d');
 
             // この場合、DailyNoteManagerがインスタンス化される
             // コマンドが登録される
-            // キーバインドが設定される
+            // キーバインドはユーザーが手動設定する
         });
 
         it('should handle disabled DailyNote scenario', () => {
             // DailyNote機能が無効な場合のシナリオ
             const mockConfigManager = {
                 getDailyNoteEnabled: () => false,
-                getDailyNoteKeybinding: () => 'ctrl+shift+d',
                 getDateFormat: () => 'YYYY-MM-DD',
                 getNoteExtension: () => '.md',
                 getDailyNotePath: () => 'dailynotes',
@@ -162,20 +137,14 @@ describe('Configurable DailyNote Features', () => {
             });
         });
 
-        it('should validate keybinding format', () => {
-            // キーバインド形式の基本検証
-            const validKeybindings = [
-                'ctrl+shift+d',
-                'cmd+shift+d',
-                'alt+d',
-                'ctrl+alt+shift+d',
-                'cmd+alt+d'
-            ];
+        it('should validate UI guidance settings', () => {
+            // UI案内設定の基本検証
+            const guidanceText = 'Follow the steps below';
 
-            validKeybindings.forEach(binding => {
-                expect(binding).to.be.a('string');
-                expect(binding).to.include('+'); // 修飾キーが含まれることを確認
-            });
+            expect(guidanceText).to.be.a('string');
+            expect(guidanceText).to.not.be.empty;
+
+            // キーバインド設定は手動設定のため、プログラム的検証不要
         });
     });
 });

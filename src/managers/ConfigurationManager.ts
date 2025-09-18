@@ -85,10 +85,6 @@ export class ConfigurationManager {
         return this.config.get<boolean>('dailyNoteEnabled', true);
     }
 
-    getDailyNoteKeybinding(): string {
-        return this.config.get<string>('dailyNoteKeybinding', 'ctrl+shift+d');
-    }
-
     getConfiguration(): ObsdConfiguration {
         return {
             vaultRoot: this.getVaultRoot(),
