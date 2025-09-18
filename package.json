@@ -1,35 +1,64 @@
 {
   "name": "obsidianforcode",
   "displayName": "Obsidian for Code",
-  "description": "Obsidian-like functionality for VS Code",
+  "description": "Obsidian-like WikiLink functionality for VS Code",
   "version": "0.1.0",
+  "publisher": "obsidianforcode",
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.103.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Notebooks"
   ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "obsidian",
+    "wikilink",
+    "markdown",
+    "notes",
+    "linking"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/obsidianforcode/obsidianforcode.git"
+  },
+  "homepage": "https://github.com/obsidianforcode/obsidianforcode#readme",
+  "bugs": {
+    "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
+  },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:obsd.openOrCreateWikiLink",
+    "onCommand:obsd.insertDate",
+    "onCommand:obsd.insertTime",
+    "onCommand:obsd.preview"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "obsd.openOrCreateWikiLink",
-        "title": "Open or Create Wiki Link"
+        "title": "Obsidian for Code: Open or Create Wiki Link",
+        "category": "Obsidian for Code"
       },
       {
         "command": "obsd.insertDate",
-        "title": "Insert Date"
+        "title": "Obsidian for Code: Insert Date",
+        "category": "Obsidian for Code"
       },
       {
         "command": "obsd.insertTime",
-        "title": "Insert Time"
+        "title": "Obsidian for Code: Insert Time",
+        "category": "Obsidian for Code"
       },
       {
         "command": "obsd.preview",
-        "title": "Preview Markdown"
+        "title": "Obsidian for Code: Preview Markdown",
+        "category": "Obsidian for Code"
       }
     ],
     "keybindings": [
@@ -99,7 +128,9 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "test:unit": "mocha --require ts-node/register tests/unit/**/*.test.ts",
-    "test:integration": "mocha --require ts-node/register tests/integration/**/*.test.ts"
+    "test:integration": "mocha --require ts-node/register tests/integration/**/*.test.ts",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
     "@types/chai": "^5.2.2",
@@ -110,6 +141,7 @@
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.22.0",
     "chai": "^6.0.1",
     "chai-as-promised": "^8.0.2",
     "eslint": "^8.28.0",
