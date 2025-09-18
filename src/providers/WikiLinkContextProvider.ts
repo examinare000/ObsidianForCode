@@ -36,18 +36,32 @@ export class WikiLinkContextProvider {
     
     private updateContext(editor?: vscode.TextEditor): void {
         editor = editor || vscode.window.activeTextEditor;
-        
-        if (!editor || editor.document.languageId !== 'markdown') {
-            console.log('[WikiLinkContext] Not in markdown file, setting context to false');
+
+        if (!editor) {
+            console.log('[WikiLinkContext] No active editor, setting context to false');
             vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', false);
             return;
         }
-        
+
+        if (editor.document.languageId !== 'markdown') {
+            console.log(`[WikiLinkContext] Not in markdown file (${editor.document.languageId}), setting context to false`);
+            vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', false);
+            return;
+        }
+
         const position = editor.selection.active;
         const inWikiLink = this.isPositionInWikiLink(editor.document, position);
-        
+
+        console.log(`[WikiLinkContext] File: ${editor.document.fileName}`);
         console.log(`[WikiLinkContext] Position: ${position.line}:${position.character}, inWikiLink: ${inWikiLink}`);
-        vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', inWikiLink);
+        console.log(`[WikiLinkContext] Setting context 'obsd.inWikiLink' to: ${inWikiLink}`);
+
+        void vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', inWikiLink)
+            .then(() => {
+                console.log(`[WikiLinkContext] Successfully set context to: ${inWikiLink}`);
+            }, (error: any) => {
+                console.error(`[WikiLinkContext] Failed to set context:`, error);
+            });
     }
     
     private isPositionInWikiLink(document: vscode.TextDocument, position: vscode.Position): boolean {
