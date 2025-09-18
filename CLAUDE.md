@@ -34,5 +34,6 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 - `claude-rules/00-global.md`: 全プロジェクト共通ルール
 - `claude-rules/01-documentation.md`: ドキュメント管理ルール
 - `claude-rules/06-production-reliability-principles.md`: プロダクション信頼性原則
+- `claude-rules/07-git-branch-strategy.md`: **🚨 Git ブランチ戦略（必須）**
 
 新しいルールを追加する場合は、番号を大きくして優先度を高くできます。
