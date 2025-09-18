@@ -38,6 +38,7 @@ export class WikiLinkContextProvider {
         editor = editor || vscode.window.activeTextEditor;
         
         if (!editor || editor.document.languageId !== 'markdown') {
+            console.log('[WikiLinkContext] Not in markdown file, setting context to false');
             vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', false);
             return;
         }
@@ -45,6 +46,7 @@ export class WikiLinkContextProvider {
         const position = editor.selection.active;
         const inWikiLink = this.isPositionInWikiLink(editor.document, position);
         
+        console.log(`[WikiLinkContext] Position: ${position.line}:${position.character}, inWikiLink: ${inWikiLink}`);
         vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', inWikiLink);
     }
     
@@ -52,30 +54,41 @@ export class WikiLinkContextProvider {
         const text = document.getText();
         const offset = document.offsetAt(position);
         
+        console.log(`[WikiLinkContext] Checking position at offset ${offset}`);
+        
         // カーソル位置周辺でWikiLinkを検索
         const beforeText = text.substring(0, offset);
         const afterText = text.substring(offset);
         
         // 最後の[[ を探す
         const lastOpenBracket = beforeText.lastIndexOf('[[');
+        console.log(`[WikiLinkContext] Last [[ at: ${lastOpenBracket}`);
+        
         if (lastOpenBracket === -1) {
+            console.log(`[WikiLinkContext] No [[ found before cursor`);
             return false;
         }
         
         // 最後の[[ より後に ]] があるかチェック
         const afterOpen = beforeText.substring(lastOpenBracket + 2);
         if (afterOpen.includes(']]')) {
+            console.log(`[WikiLinkContext] Found ]] after last [[, not in WikiLink`);
             return false; // 既に閉じられているWikiLinkの後にいる
         }
         
         // 次の]] を探す
         const nextCloseBracket = afterText.indexOf(']]');
+        console.log(`[WikiLinkContext] Next ]] at: ${nextCloseBracket}`);
+        
         if (nextCloseBracket === -1) {
+            console.log(`[WikiLinkContext] No closing ]] found`);
             return false; // 閉じられていないWikiLink（不完全）
         }
         
         // WikiLink内にカーソルがある
-        return true;
+        const inWikiLink = true;
+        console.log(`[WikiLinkContext] Position IS in WikiLink`);
+        return inWikiLink;
     }
     
     dispose(): void {
