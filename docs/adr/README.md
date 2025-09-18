@@ -12,6 +12,10 @@
 | [004](./004-datetime-token-replacement-algorithm.md) | DateTime Token Replacement Algorithm | Accepted | 2025-09-09 | トークン衝突を回避する文字配列ベース置換アルゴリズム |
 | [005](./005-component-architecture-design.md) | Component Architecture Design | Accepted | 2025-09-09 | レイヤードアーキテクチャによる責務分離設計 |
 | [006](./006-configuration-management-strategy.md) | Configuration Management Strategy | Accepted | 2025-09-09 | 型安全な設定管理とValidation Layerの実装 |
+| [007](./007-wikilink-command-debugging-resolution.md) | WikiLink Command Debugging Resolution | Accepted | 2025-09-18 | Cmd+Enterキーバインドとルートディレクトリエラーの解決 |
+| [008](./008-dailynote-feature-design.md) | DailyNote Feature Design | Accepted | 2025-09-18 | 日次ノート自動作成機能の設計とTDD実装 |
+| [009](./009-configurable-dailynote-features.md) | Configurable DailyNote Features | Accepted | 2025-09-18 | DailyNote機能の設定可能化と条件付き機能登録 |
+| [010](./010-settings-ui-improvement.md) | Settings UI Improvement | Accepted | 2025-09-18 | キーバインド設定UIの表示専用化による混乱解消 |
 
 ## ADR作成ガイドライン
 

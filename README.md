@@ -14,6 +14,7 @@ ObsidianのようなWikiLink機能をVS Codeで利用できるようにする拡
 - **Open/Create WikiLink** (`Ctrl+Enter` / `Cmd+Enter`) - WikiLink先を開く・作成
 - **Insert Date** (`Alt+D`) - 現在の日付を挿入
 - **Insert Time** (`Alt+T`) - 現在の時刻を挿入
+- **Open Daily Note** - 今日の日付のデイリーノートを開く・作成
 - **Preview** - Markdownプレビュー（実装予定）
 
 ### 設定
@@ -23,6 +24,12 @@ ObsidianのようなWikiLink機能をVS Codeで利用できるようにする拡
 - `obsd.dateFormat` - 日付フォーマット (デフォルト: `YYYY-MM-DD`)
 - `obsd.timeFormat` - 時刻フォーマット (デフォルト: `HH:mm`)
 - `obsd.template` - 新規ノートテンプレート
+
+#### DailyNote設定
+- `obsd.dailyNoteEnabled` - DailyNote機能の有効/無効 (デフォルト: `true`)
+- `obsd.dailyNotePath` - デイリーノートの保存ディレクトリ (デフォルト: `dailynotes`)
+- `obsd.dailyNoteTemplate` - デイリーノートテンプレートファイルパス
+- `obsd.dailyNoteKeybindingGuide` - キーバインド設定方法のガイダンス (読み取り専用)
 
 ## 🛠 開発
 
@@ -34,7 +41,7 @@ npm run compile
 
 ### テスト実行
 ```bash
-npm run test:unit        # 単体テスト (76個のテスト)
+npm run test:unit        # 単体テスト (46個のテスト)
 npm run test:integration # 統合テスト
 ```
 
@@ -47,8 +54,9 @@ npm run test:integration # 統合テスト
 
 #### Core Layer (VS Code非依存)
 - **WikiLinkProcessor** - WikiLink解析・変換
-- **ConfigurationManager** - 設定管理・検証  
+- **ConfigurationManager** - 設定管理・検証
 - **DateTimeFormatter** - 日時フォーマット
+- **DailyNoteManager** - デイリーノート作成・管理
 
 #### Integration Layer (VS Code統合)
 - **WikiLinkDocumentLinkProvider** - リンク検出・ナビゲーション
@@ -57,8 +65,9 @@ npm run test:integration # 統合テスト
 
 ### 品質保証
 - **Test-Driven Development** - t-wadaのTDD手法を採用
-- **76個の包括的テスト** - Red-Green-Refactorサイクルで開発
+- **46個の包括的テスト** - Red-Green-Refactorサイクルで開発
 - **依存性注入** - テスタブル設計でVS Code API抽象化
+- **アイソレートテスト** - vscode依存を排除した独立テスト環境
 
 ## 📚 ドキュメント
 
