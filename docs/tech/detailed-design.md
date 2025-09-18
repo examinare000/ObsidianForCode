@@ -791,12 +791,83 @@ tests/
 
 ### 10.2 監視指標
 - WikiLink処理時間 < 100ms
-- プレビュー更新時間 < 100ms  
+- プレビュー更新時間 < 100ms
 - 拡張機能起動時間 < 500ms
 - メモリ使用量 < 50MB
 
+## 11. 実装実績・デバッグ解決記録
+
+### 11.1 WikiLink機能デバッグ解決 (2025-09-18)
+
+**解決した問題**:
+1. **Cmd+Enter キーバインド不動作**: WikiLink内でのコマンド実行が機能しない
+2. **ファイル作成パスエラー**: root filesystem への誤った書き込み試行
+
+**根本原因**:
+- **package.json エントリーポイント設定ミス**: `"main": "./out/extension.js"` → `"./out/src/extension.js"`
+- **WikiLink位置検出ロジックの不正確性**: 文字列ベース検出をregexベース検出に改善
+
+**実装された解決策**:
+
+#### 11.1.1 WikiLinkContextProvider の改善実装
+```typescript
+// src/providers/WikiLinkContextProvider.ts - 実装済み
+private isPositionInWikiLink(document: vscode.TextDocument, position: vscode.Position): boolean {
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+    const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
+
+    let match;
+    while ((match = wikiLinkRegex.exec(text)) !== null) {
+        const linkStart = match.index;
+        const linkEnd = match.index + match[0].length;
+        // [[ の直後から ]] の直前まで（内側）にある場合のみtrue
+        if (offset >= linkStart + 2 && offset <= linkEnd - 3) {
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+#### 11.1.2 拡張機能初期化の詳細ログ実装
+```typescript
+// src/extension.ts - 実装済み
+export function activate(context: vscode.ExtensionContext) {
+    console.log('[INIT] ObsidianForCode extension is now active');
+    console.log('[INIT] Extension context:', context.extensionPath);
+    console.log('[INIT] Workspace folders:', vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath));
+
+    // 各コンポーネントの段階的初期化とエラーハンドリング
+    try {
+        const configManager = new ConfigurationManager_1.ConfigurationManager();
+        console.log('[INIT] ConfigurationManager created successfully');
+
+        const wikiLinkProcessor = new WikiLinkProcessor_1.WikiLinkProcessor({
+            slugStrategy: 'passthrough'
+        });
+        console.log('[INIT] WikiLinkProcessor created successfully');
+
+        // ... 他のコンポーネント初期化
+    } catch (error) {
+        console.error('[INIT] Error during component initialization:', error);
+    }
+}
+```
+
+**成果**:
+- ✅ Cmd+Enter キーバインドが正常動作
+- ✅ ファイル作成が適切なワークスペースパスで実行
+- ✅ WikiLink コンテキスト検出が正確に動作
+- ✅ 全てのコマンドが期待通りに登録・実行
+
+**デバッグ手法**:
+- 段階的ビルド作成 (0.1.1-debug → 0.1.4-debug)
+- 包括的ログ出力による問題追跡
+- VS Code キャッシュ回避のためのバージョン管理
+
 ---
 
-**文書バージョン**: 1.0  
-**最終更新**: 2025-09-09  
-**承認者**: [承認者名]
+**文書バージョン**: 1.1
+**最終更新**: 2025-09-18
+**実装実績更新**: WikiLink機能デバッグ解決記録追加
