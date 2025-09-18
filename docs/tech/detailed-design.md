@@ -866,8 +866,227 @@ export function activate(context: vscode.ExtensionContext) {
 - 包括的ログ出力による問題追跡
 - VS Code キャッシュ回避のためのバージョン管理
 
+## 12. DailyNote機能設計
+
+### 12.1 機能概要
+ユーザーがワンクリックで本日の日付のノートファイルを開設・作成できる機能。Obsidianの代表的機能の一つを VS Code 環境で提供する。
+
+### 12.2 アーキテクチャ設計
+
+#### 12.2.1 DailyNoteManager クラス
+```typescript
+// src/managers/DailyNoteManager.ts
+export class DailyNoteManager {
+    constructor(
+        private configManager: ConfigurationManager,
+        private dateTimeFormatter: DateTimeFormatter
+    ) {}
+
+    /**
+     * 指定日付のDailyNoteファイル名を生成
+     */
+    getDailyNoteFileName(date: Date): string {
+        const dateFormat = this.configManager.getDateFormat();
+        const formattedDate = this.dateTimeFormatter.formatDate(date, dateFormat);
+        const extension = this.configManager.getNoteExtension();
+        return `${formattedDate}${extension}`;
+    }
+
+    /**
+     * DailyNoteファイルの完全パスを解決
+     */
+    getDailyNotePath(workspaceFolder: vscode.WorkspaceFolder, date: Date): vscode.Uri {
+        const fileName = this.getDailyNoteFileName(date);
+        const dailyNotePath = this.configManager.getDailyNotePath();
+        const vaultRoot = this.configManager.getVaultRoot();
+
+        if (vaultRoot && vaultRoot.trim() !== '') {
+            if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
+                return vscode.Uri.file(`${vaultRoot}/${dailyNotePath}/${fileName}`);
+            } else {
+                return vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, dailyNotePath, fileName);
+            }
+        } else {
+            return vscode.Uri.joinPath(workspaceFolder.uri, dailyNotePath, fileName);
+        }
+    }
+
+    /**
+     * テンプレートファイルの内容を読み込み
+     */
+    async getTemplateContent(workspaceFolder: vscode.WorkspaceFolder): Promise<string> {
+        const templatePath = this.configManager.getDailyNoteTemplate();
+
+        if (!templatePath || templatePath.trim() === '') {
+            return '';
+        }
+
+        try {
+            const vaultRoot = this.configManager.getVaultRoot();
+            let templateUri: vscode.Uri;
+
+            if (vaultRoot && vaultRoot.trim() !== '') {
+                if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
+                    templateUri = vscode.Uri.file(`${vaultRoot}/${templatePath}`);
+                } else {
+                    templateUri = vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, templatePath);
+                }
+            } else {
+                templateUri = vscode.Uri.joinPath(workspaceFolder.uri, templatePath);
+            }
+
+            const data = await vscode.workspace.fs.readFile(templateUri);
+            return new TextDecoder().decode(data);
+        } catch (error) {
+            // テンプレートファイルが見つからない場合は空文字列を返す
+            return '';
+        }
+    }
+
+    /**
+     * DailyNoteを開設または作成するメイン処理
+     */
+    async openOrCreateDailyNote(workspaceFolder: vscode.WorkspaceFolder, date: Date = new Date()): Promise<void> {
+        const dailyNoteUri = this.getDailyNotePath(workspaceFolder, date);
+
+        try {
+            // ファイルが既に存在するかチェック
+            await vscode.workspace.fs.stat(dailyNoteUri);
+            // 存在する場合はそのまま開く
+            await vscode.window.showTextDocument(dailyNoteUri);
+        } catch {
+            // ファイルが存在しない場合は新規作成
+            const templateContent = await this.getTemplateContent(workspaceFolder);
+            const data = new TextEncoder().encode(templateContent);
+
+            // ディレクトリが存在しない場合は作成
+            const dirUri = vscode.Uri.file(path.dirname(dailyNoteUri.fsPath));
+            await vscode.workspace.fs.createDirectory(dirUri);
+
+            // ファイル作成
+            await vscode.workspace.fs.writeFile(dailyNoteUri, data);
+
+            // 新しいタブで開く
+            await vscode.window.showTextDocument(dailyNoteUri);
+        }
+    }
+}
+```
+
+#### 12.2.2 ConfigurationManager 拡張
+```typescript
+// src/managers/ConfigurationManager.ts に追加
+export class ConfigurationManager {
+    // 既存メソッド...
+
+    getDailyNoteTemplate(): string {
+        const config = vscode.workspace.getConfiguration(ConfigurationManager.CONFIG_SECTION);
+        return config.get<string>('dailyNoteTemplate', '');
+    }
+
+    getDailyNotePath(): string {
+        const config = vscode.workspace.getConfiguration(ConfigurationManager.CONFIG_SECTION);
+        return config.get<string>('dailyNotePath', 'dailynotes');
+    }
+}
+```
+
+### 12.3 コマンド統合
+
+#### 12.3.1 extension.ts への統合
+```typescript
+// src/extension.ts
+export function activate(context: vscode.ExtensionContext) {
+    // 既存初期化処理...
+
+    const dailyNoteManager = new DailyNoteManager(configManager, dateTimeFormatter);
+
+    // コマンド登録
+    const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
+            return;
+        }
+
+        try {
+            await dailyNoteManager.openOrCreateDailyNote(workspaceFolder);
+        } catch (error) {
+            vscode.window.showErrorMessage('Failed to open daily note');
+        }
+    });
+
+    context.subscriptions.push(dailyNoteCommand);
+}
+```
+
+### 12.4 設定項目
+
+#### 12.4.1 package.json 設定定義
+```json
+{
+  "contributes": {
+    "configuration": {
+      "properties": {
+        "obsd.dailyNoteTemplate": {
+          "type": "string",
+          "default": "",
+          "description": "Daily note template file path (relative to vault root)"
+        },
+        "obsd.dailyNotePath": {
+          "type": "string",
+          "default": "dailynotes",
+          "description": "Daily notes directory path (relative to vault root)"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "obsd.openDailyNote",
+        "title": "Obsidian for Code: Open Daily Note",
+        "category": "Obsidian for Code"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "obsd.openDailyNote",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "editorTextFocus"
+      }
+    ]
+  }
+}
+```
+
+### 12.5 テスト戦略
+
+#### 12.5.1 単体テスト
+- `getDailyNoteFileName()`: 日付フォーマット処理テスト
+- `getDailyNotePath()`: パス解決ロジックテスト
+- `getTemplateContent()`: テンプレート読み込みテスト
+- `openOrCreateDailyNote()`: ファイル作成・開設テスト
+
+#### 12.5.2 統合テスト
+- VS Code コマンド実行テスト
+- ワークスペース連携テスト
+- エラーハンドリングテスト
+
+### 12.6 エラーハンドリング
+
+#### 12.6.1 想定エラーシナリオ
+1. **ワークスペースフォルダなし**: 適切なエラーメッセージ表示
+2. **テンプレートファイル不存在**: 空のファイル作成
+3. **ディレクトリ作成権限なし**: エラーメッセージ表示
+4. **ファイル書き込み権限なし**: エラーメッセージ表示
+
+#### 12.6.2 フォールバック戦略
+- テンプレート読み込み失敗 → 空ファイル作成
+- ディレクトリ作成失敗 → ワークスペースルートに作成
+- 設定値不正 → デフォルト値使用
+
 ---
 
-**文書バージョン**: 1.1
+**文書バージョン**: 1.2
 **最終更新**: 2025-09-18
-**実装実績更新**: WikiLink機能デバッグ解決記録追加
+**更新内容**: DailyNote機能設計追加

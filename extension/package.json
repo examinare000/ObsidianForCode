@@ -1,8 +1,8 @@
 {
   "name": "obsidianforcode",
-  "displayName": "Obsidian for Code",
+  "displayName": "Obsidian for Code (DEBUG)",
   "description": "Obsidian-like WikiLink functionality for VS Code",
-  "version": "0.2.0",
+  "version": "0.1.4-debug",
   "publisher": "obsidianforcode",
   "engines": {
     "vscode": "^1.103.0"
@@ -35,7 +35,8 @@
     "onCommand:obsd.openOrCreateWikiLink",
     "onCommand:obsd.insertDate",
     "onCommand:obsd.insertTime",
-    "onCommand:obsd.preview"
+    "onCommand:obsd.preview",
+    "onCommand:obsd.test"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
@@ -61,8 +62,8 @@
         "category": "Obsidian for Code"
       },
       {
-        "command": "obsd.openDailyNote",
-        "title": "Obsidian for Code: Open Daily Note",
+        "command": "obsd.test",
+        "title": "Obsidian for Code: Test Command",
         "category": "Obsidian for Code"
       }
     ],
@@ -81,12 +82,6 @@
       {
         "command": "obsd.insertTime",
         "key": "alt+t",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "obsd.openDailyNote",
-        "key": "ctrl+shift+d",
-        "mac": "cmd+shift+d",
         "when": "editorTextFocus"
       }
     ],
@@ -127,16 +122,6 @@
           "type": "string",
           "default": "",
           "description": "New note template"
-        },
-        "obsd.dailyNoteTemplate": {
-          "type": "string",
-          "default": "",
-          "description": "Daily note template file path (relative to vault root)"
-        },
-        "obsd.dailyNotePath": {
-          "type": "string",
-          "default": "dailynotes",
-          "description": "Daily notes directory path (relative to vault root)"
         }
       }
     }

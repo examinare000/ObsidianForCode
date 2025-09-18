@@ -3,6 +3,7 @@ import { WikiLinkProcessor } from './processors/WikiLinkProcessor';
 import { DateTimeFormatter } from './utils/DateTimeFormatter';
 import { ConfigurationManager } from './managers/ConfigurationManager';
 import { WikiLinkContextProvider } from './providers/WikiLinkContextProvider';
+import { DailyNoteManager } from './managers/DailyNoteManager';
 
 // ファイルシステム安全なファイル名に正規化
 function sanitizeFileName(fileName: string): string {
@@ -41,6 +42,15 @@ export function activate(context: vscode.ExtensionContext) {
         return;
     }
 
+    // DailyNote Manager初期化
+    let dailyNoteManager: DailyNoteManager;
+    try {
+        dailyNoteManager = new DailyNoteManager(configManager, dateTimeFormatter);
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to initialize DailyNoteManager');
+        return;
+    }
+
     // WikiLink DocumentLinkProvider登録
     let linkProviderDisposable: vscode.Disposable;
     try {
@@ -73,7 +83,21 @@ export function activate(context: vscode.ExtensionContext) {
             return showPreview();
         });
 
-        commands = [openCommand, dateCommand, timeCommand, previewCommand];
+        const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
+                return;
+            }
+
+            try {
+                await dailyNoteManager.openOrCreateDailyNote(workspaceFolder);
+            } catch (error) {
+                vscode.window.showErrorMessage('Failed to open daily note');
+            }
+        });
+
+        commands = [openCommand, dateCommand, timeCommand, previewCommand, dailyNoteCommand];
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register commands');
         return;

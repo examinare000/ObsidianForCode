@@ -73,6 +73,14 @@ export class ConfigurationManager {
         return this.config.get<string>('template', '');
     }
 
+    getDailyNoteTemplate(): string {
+        return this.config.get<string>('dailyNoteTemplate', '');
+    }
+
+    getDailyNotePath(): string {
+        return this.config.get<string>('dailyNotePath', 'dailynotes');
+    }
+
     getConfiguration(): ObsdConfiguration {
         return {
             vaultRoot: this.getVaultRoot(),
