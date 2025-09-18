@@ -82,7 +82,14 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
         if (document.languageId !== 'markdown') {
             return [];
         }
-        
+
+        // ワークスペースフォルダーの事前チェック
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            console.warn('[WikiLinkProvider] No workspace folder available for document links');
+            return [];
+        }
+
         const links: vscode.DocumentLink[] = [];
         const text = document.getText();
         const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
@@ -102,9 +109,8 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 
                 const extension = this.configManager.getNoteExtension();
                 const vaultRoot = this.configManager.getVaultRoot();
-                
+
                 let uri: vscode.Uri;
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                 
                 if (vaultRoot && vaultRoot.trim() !== '') {
                     if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
@@ -121,6 +127,7 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
                     if (workspaceFolder) {
                         uri = vscode.Uri.joinPath(workspaceFolder.uri, `${fileName}${extension}`);
                     } else {
+                        console.warn(`[WikiLinkProvider] No workspace folder found for link: ${linkText}`);
                         continue;
                     }
                 }
