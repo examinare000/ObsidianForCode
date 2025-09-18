@@ -38,7 +38,7 @@ export interface WorkspaceConfiguration {
 }
 
 export class ConfigurationManager {
-    private static readonly CONFIG_SECTION = 'obsd';
+    private static readonly configSection = 'obsd';
     private changeListeners: ((config: ObsdConfiguration) => void)[] = [];
     
     constructor(private config: WorkspaceConfiguration) {}
