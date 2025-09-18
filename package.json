@@ -1,8 +1,8 @@
 {
   "name": "obsidianforcode",
-  "displayName": "Obsidian for Code",
+  "displayName": "Obsidian for Code (DEBUG)",
   "description": "Obsidian-like WikiLink functionality for VS Code",
-  "version": "0.1.0",
+  "version": "0.1.4-debug",
   "publisher": "obsidianforcode",
   "engines": {
     "vscode": "^1.103.0"
@@ -35,9 +35,10 @@
     "onCommand:obsd.openOrCreateWikiLink",
     "onCommand:obsd.insertDate",
     "onCommand:obsd.insertTime",
-    "onCommand:obsd.preview"
+    "onCommand:obsd.preview",
+    "onCommand:obsd.test"
   ],
-  "main": "./out/extension.js",
+  "main": "./out/src/extension.js",
   "contributes": {
     "commands": [
       {
@@ -58,6 +59,11 @@
       {
         "command": "obsd.preview",
         "title": "Obsidian for Code: Preview Markdown",
+        "category": "Obsidian for Code"
+      },
+      {
+        "command": "obsd.test",
+        "title": "Obsidian for Code: Test Command",
         "category": "Obsidian for Code"
       }
     ],
