@@ -17,10 +17,22 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 
 # 開発ルール
 
+## ブランチ戦略
+
+**🚨 重要**: 開発は必ず `develop` ブランチで行ってください
+
+- **main**: プロダクション準備完了コードのみ。リリースタグのみ。
+- **develop**: 機能統合ブランチ。アクティブな開発はここで実施。
+- **feature/xxx**: 新機能開発 (developから分岐、developにマージ)
+
+詳細は `.gitflow` ファイルを参照してください。
+
+## Claude動作ルール
+
 プロジェクト固有のClaude動作ルールは `claude-rules/` ディレクトリに定義されています：
 
 - `claude-rules/00-global.md`: 全プロジェクト共通ルール
-- `claude-rules/01-documentation.md`: ドキュメント管理ルール  
+- `claude-rules/01-documentation.md`: ドキュメント管理ルール
 - `claude-rules/06-production-reliability-principles.md`: プロダクション信頼性原則
 
 新しいルールを追加する場合は、番号を大きくして優先度を高くできます。
