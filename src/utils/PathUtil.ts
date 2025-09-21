@@ -10,11 +10,17 @@ export class PathUtil {
      */
     static isAbsolutePath(pathString: string): boolean {
         // Unix/Linux/macOS
-        if (pathString.startsWith('/')) return true;
+        if (pathString.startsWith('/')) {
+            return true;
+        }
         // Windows ドライブレター
-        if (pathString.match(/^[A-Za-z]:[/\\]/)) return true;
+        if (pathString.match(/^[A-Za-z]:[/\\]/)) {
+            return true;
+        }
         // Windows UNC パス
-        if (pathString.match(/^\\\\[^\\]+\\/)) return true;
+        if (pathString.match(/^\\\\[^\\]+\\/)) {
+            return true;
+        }
         return false;
     }
 
@@ -41,12 +47,12 @@ export class PathUtil {
         }
 
         // 予約名チェック（拡張子を除いたベース名のみ）
-        const baseName = sanitized.split('.')[0];
+        const baseName = sanitized.split('.')[0].trim();
         if (reservedNames.includes(baseName.toUpperCase())) {
-            sanitized = `_${sanitized}`;
+            sanitized = `_${sanitized.trim()}`;
         }
 
-        return sanitized;
+        return sanitized.trim();
     }
 
     /**

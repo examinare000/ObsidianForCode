@@ -42,12 +42,12 @@ describe('PathUtil (Windows File Path Handling)', () => {
             }
 
             // 予約名チェック（拡張子を除いたベース名のみ）
-            const baseName = sanitized.split('.')[0];
+            const baseName = sanitized.split('.')[0].trim();
             if (reservedNames.includes(baseName.toUpperCase())) {
-                sanitized = `_${sanitized}`;
+                sanitized = `_${sanitized.trim()}`;
             }
 
-            return sanitized;
+            return sanitized.trim();
         }
 
         /**
