@@ -1,20 +1,15 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { WikiLinkProcessor } from './processors/WikiLinkProcessor';
 import { DateTimeFormatter } from './utils/DateTimeFormatter';
 import { ConfigurationManager } from './managers/ConfigurationManager';
 import { WikiLinkContextProvider } from './providers/WikiLinkContextProvider';
 import { DailyNoteManager } from './managers/DailyNoteManager';
-
-// ファイルシステム安全なファイル名に正規化
-function sanitizeFileName(fileName: string): string {
-    return fileName
-        .replace(/[/\\:*?"<>|]/g, '-')  // 特殊文字をハイフンに変換
-        .replace(/\s+/g, ' ')          // 複数の空白を単一の空白に
-        .trim()                        // 前後の空白を削除
-        .substring(0, 255);            // ファイル名長制限
-}
+import { PathUtil } from './utils/PathUtil';
 
 export function activate(context: vscode.ExtensionContext) {
+    const errors: string[] = [];
+
     // Configuration Manager初期化
     let configManager: ConfigurationManager;
     try {
@@ -66,29 +61,53 @@ export function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    // Commands登録
-    let commands: vscode.Disposable[];
+    // Commands登録（個別エラーハンドリング）
+    const commands: vscode.Disposable[] = [];
+
+    // openOrCreateWikiLink コマンド
     try {
         const openCommand = vscode.commands.registerCommand('obsd.openOrCreateWikiLink', () => {
             return openOrCreateWikiLink(configManager);
         });
+        commands.push(openCommand);
+    } catch (error) {
+        errors.push(`Failed to register openOrCreateWikiLink: ${error}`);
+    }
 
+    // insertDate コマンド
+    try {
         const dateCommand = vscode.commands.registerCommand('obsd.insertDate', () => {
             return insertDate(configManager, dateTimeFormatter);
         });
+        commands.push(dateCommand);
+    } catch (error) {
+        errors.push(`Failed to register insertDate: ${error}`);
+    }
 
+    // insertTime コマンド
+    try {
         const timeCommand = vscode.commands.registerCommand('obsd.insertTime', () => {
             return insertTime(configManager, dateTimeFormatter);
         });
+        commands.push(timeCommand);
+    } catch (error) {
+        errors.push(`Failed to register insertTime: ${error}`);
+    }
 
+    // preview コマンド
+    try {
         const previewCommand = vscode.commands.registerCommand('obsd.preview', () => {
             return showPreview();
         });
+        commands.push(previewCommand);
+    } catch (error) {
+        errors.push(`Failed to register preview: ${error}`);
+    }
 
-        // DailyNoteコマンドは設定により条件付きで登録
-        let dailyNoteCommand: vscode.Disposable | undefined;
-        if (dailyNoteManager) {
-            dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+    // DailyNoteコマンドは設定により条件付きで登録
+    if (dailyNoteManager) {
+        try {
+            const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
                 const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                 if (!workspaceFolder) {
                     vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
@@ -101,14 +120,18 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.window.showErrorMessage('Failed to open daily note');
                 }
             });
+            commands.push(dailyNoteCommand);
+        } catch (error) {
+            errors.push(`Failed to register openDailyNote: ${error}`);
         }
+    }
 
-        commands = dailyNoteCommand
-            ? [openCommand, dateCommand, timeCommand, previewCommand, dailyNoteCommand]
-            : [openCommand, dateCommand, timeCommand, previewCommand];
-    } catch (error) {
-        vscode.window.showErrorMessage('Failed to register commands');
-        return;
+    // エラー報告（但し拡張機能は継続）
+    if (errors.length > 0) {
+        console.warn('[ObsidianForCode] Some commands failed to register:', errors);
+        vscode.window.showWarningMessage(
+            `ObsidianForCode: ${errors.length} command(s) failed to register. Check output panel for details.`
+        );
     }
 
     // Context subscriptions
@@ -174,31 +197,20 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 const range = new vscode.Range(startPos, endPos);
                 
                 let fileName = this.wikiLinkProcessor.transformFileName(parsedLink.pageName);
-                fileName = sanitizeFileName(fileName);
+                fileName = PathUtil.sanitizeFileName(fileName);
                 
                 const extension = this.configManager.getNoteExtension();
                 const vaultRoot = this.configManager.getVaultRoot();
 
                 let uri: vscode.Uri;
 
-                if (vaultRoot && vaultRoot.trim() !== '') {
-                    if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
-                        const filePath = `${vaultRoot}/${fileName}${extension}`;
-                        uri = vscode.Uri.file(filePath);
-                    } else {
-                        if (workspaceFolder) {
-                            uri = vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, `${fileName}${extension}`);
-                        } else {
-                            continue;
-                        }
-                    }
-                } else {
-                    if (workspaceFolder) {
-                        uri = vscode.Uri.joinPath(workspaceFolder.uri, `${fileName}${extension}`);
-                    } else {
-                        continue;
-                    }
-                }
+                // PathUtilを使用した安全なURI作成
+                uri = PathUtil.createSafeUri(
+                    vaultRoot,
+                    fileName,
+                    extension,
+                    workspaceFolder
+                );
                 
                 const documentLink = new vscode.DocumentLink(range, uri);
                 links.push(documentLink);
@@ -234,7 +246,7 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
         let fileName = wikiLinkProcessor.transformFileName(parsedLink.pageName);
         
         // ファイルシステム安全な名前に正規化
-        fileName = sanitizeFileName(fileName);
+        fileName = PathUtil.sanitizeFileName(fileName);
         
         const extension = configManager.getNoteExtension();
         const vaultRoot = configManager.getVaultRoot();
@@ -246,34 +258,40 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
             return;
         }
 
-        // ファイルURI作成
-        let uri: vscode.Uri;
-        if (vaultRoot && vaultRoot.trim() !== '') {
-            // vaultRoot設定あり
-            if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
-                // 絶対パス
-                uri = vscode.Uri.file(`${vaultRoot}/${fileName}${extension}`);
-            } else {
-                // 相対パス (ワークスペースからの相対)
-                uri = vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, `${fileName}${extension}`);
-            }
-        } else {
-            // vaultRootが空の場合、ワークスペースルートに作成
-            uri = vscode.Uri.joinPath(workspaceFolder.uri, `${fileName}${extension}`);
-        }
+        // PathUtilを使用した安全なURI作成
+        const uri = PathUtil.createSafeUri(
+            vaultRoot,
+            fileName,
+            extension,
+            workspaceFolder
+        );
 
         
+        // ファイル存在チェックと作成処理
         try {
             await vscode.workspace.fs.stat(uri);
             await vscode.window.showTextDocument(uri);
         } catch {
-            const template = configManager.getTemplate();
-            const data = new TextEncoder().encode(template);
-            await vscode.workspace.fs.writeFile(uri, data);
-            await vscode.window.showTextDocument(uri);
+            // ファイルが存在しない場合は新規作成
+            try {
+                // ディレクトリ作成の改善
+                const dirUri = vscode.Uri.file(path.dirname(uri.fsPath));
+                await vscode.workspace.fs.createDirectory(dirUri);
+
+                const template = configManager.getTemplate();
+                const data = new TextEncoder().encode(template);
+                await vscode.workspace.fs.writeFile(uri, data);
+                await vscode.window.showTextDocument(uri);
+            } catch (createError) {
+                vscode.window.showErrorMessage(
+                    `Failed to create file: ${createError instanceof Error ? createError.message : String(createError)}`
+                );
+            }
         }
     } catch (error) {
-        vscode.window.showErrorMessage('Failed to open or create WikiLink');
+        vscode.window.showErrorMessage(
+            `WikiLink operation failed: ${error instanceof Error ? error.message : String(error)}`
+        );
     }
 }
 

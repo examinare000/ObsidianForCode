@@ -1248,8 +1248,279 @@ Current Test Suite (46 tests passing):
 - **Lint**: ESLint clean
 - **アーキテクチャ**: レイヤード設計による保守性
 
+## 15. Windows ファイルパス処理とコマンド登録改善 (v0.4.4)
+
+### 15.1 問題の特定
+Windows環境において、拡張機能のコマンド登録が失敗する問題が発生。調査により以下の問題を特定：
+
+#### 15.1.1 ファイルパス処理の不完全性
+- Windows絶対パス判定が `C:` 形式のみで、UNCパス（`\\server\share`）未対応
+- パス区切り文字の混在による URI 作成エラー
+- ファイル名サニタイズでWindows予約名が未チェック
+
+#### 15.1.2 エラーハンドリングの問題
+- 初期化失敗時にextension全体が無効化される
+- コマンド登録失敗の詳細情報が不足
+
+### 15.2 設計改善策
+
+#### 15.2.1 PathUtil ユーティリティクラス設計
+```typescript
+// src/utils/PathUtil.ts
+export class PathUtil {
+    /**
+     * プラットフォーム対応の絶対パス判定
+     */
+    static isAbsolutePath(path: string): boolean {
+        // Unix/Linux/macOS
+        if (path.startsWith('/')) return true;
+        // Windows ドライブレター
+        if (path.match(/^[A-Za-z]:[/\\]/)) return true;
+        // Windows UNC パス
+        if (path.match(/^\\\\[^\\]+\\/)) return true;
+        return false;
+    }
+
+    /**
+     * Windows予約名対応のファイル名サニタイズ
+     */
+    static sanitizeFileName(fileName: string): string {
+        // Windows予約名チェック
+        const reservedNames = ['CON', 'PRN', 'AUX', 'NUL',
+            'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+            'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+
+        let sanitized = fileName
+            .replace(/[/\\:*?"<>|]/g, '-')  // 特殊文字をハイフンに変換
+            .replace(/\s+/g, ' ')          // 複数の空白を単一の空白に
+            .trim()                        // 前後の空白を削除
+            .replace(/\.+$/, '')           // 末尾のピリオドを削除
+            .substring(0, 255);            // ファイル名長制限
+
+        // 予約名チェック
+        if (reservedNames.includes(sanitized.toUpperCase())) {
+            sanitized = `_${sanitized}`;
+        }
+
+        return sanitized || 'untitled'; // 空文字列の場合のフォールバック
+    }
+
+    /**
+     * 安全なURI作成
+     */
+    static createSafeUri(
+        vaultRoot: string,
+        fileName: string,
+        extension: string,
+        workspaceFolder: vscode.WorkspaceFolder
+    ): vscode.Uri {
+        const sanitizedFileName = this.sanitizeFileName(fileName) + extension;
+
+        if (vaultRoot && vaultRoot.trim() !== '') {
+            if (this.isAbsolutePath(vaultRoot)) {
+                // 絶対パス: path.resolve()でクロスプラットフォーム対応
+                const absolutePath = path.resolve(vaultRoot, sanitizedFileName);
+                return vscode.Uri.file(absolutePath);
+            } else {
+                // 相対パス: joinPathでワークスペースからの相対パス
+                return vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, sanitizedFileName);
+            }
+        } else {
+            // vaultRootが空の場合、ワークスペースルートに作成
+            return vscode.Uri.joinPath(workspaceFolder.uri, sanitizedFileName);
+        }
+    }
+}
+```
+
+#### 15.2.2 改善されたエラーハンドリング戦略
+```typescript
+// src/extension.ts - 改善後のactivate関数
+export function activate(context: vscode.ExtensionContext) {
+    const errors: string[] = [];
+
+    // 段階的初期化とフォールバック
+    try {
+        const configManager = new ConfigurationManager();
+
+        // 個別コマンド登録（失敗しても他は継続）
+        const commands: vscode.Disposable[] = [];
+
+        // openOrCreateWikiLink コマンド
+        try {
+            const openCommand = vscode.commands.registerCommand('obsd.openOrCreateWikiLink', () => {
+                return openOrCreateWikiLink(configManager);
+            });
+            commands.push(openCommand);
+        } catch (error) {
+            errors.push(`Failed to register openOrCreateWikiLink: ${error}`);
+        }
+
+        // insertDate コマンド
+        try {
+            const dateCommand = vscode.commands.registerCommand('obsd.insertDate', () => {
+                return insertDate(configManager, dateTimeFormatter);
+            });
+            commands.push(dateCommand);
+        } catch (error) {
+            errors.push(`Failed to register insertDate: ${error}`);
+        }
+
+        // エラー報告（但し拡張機能は継続）
+        if (errors.length > 0) {
+            console.warn('[ObsidianForCode] Some commands failed to register:', errors);
+            vscode.window.showWarningMessage(
+                `ObsidianForCode: ${errors.length} command(s) failed to register. Check output panel for details.`
+            );
+        }
+
+        context.subscriptions.push(...commands);
+    } catch (error) {
+        vscode.window.showErrorMessage('ObsidianForCode: Critical initialization failure');
+        console.error('[ObsidianForCode] Critical error:', error);
+    }
+}
+```
+
+### 15.3 実装詳細
+
+#### 15.3.1 ファイル作成処理の改善
+```typescript
+// 改善されたopenOrCreateWikiLink関数
+async function openOrCreateWikiLink(configManager: ConfigurationManager): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+        vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
+        return;
+    }
+
+    try {
+        const position = editor.selection.active;
+        const linkText = getWikiLinkAtPosition(editor.document, position);
+
+        if (!linkText) {
+            vscode.window.showInformationMessage('No WikiLink found at cursor position');
+            return;
+        }
+
+        const wikiLinkProcessor = new WikiLinkProcessor({
+            slugStrategy: configManager.getSlugStrategy()
+        });
+        const parsedLink = wikiLinkProcessor.parseWikiLink(linkText);
+
+        // PathUtilを使用した安全なURI作成
+        const uri = PathUtil.createSafeUri(
+            configManager.getVaultRoot(),
+            wikiLinkProcessor.transformFileName(parsedLink.pageName),
+            configManager.getNoteExtension(),
+            workspaceFolder
+        );
+
+        // ファイル存在チェックと作成処理
+        try {
+            await vscode.workspace.fs.stat(uri);
+            await vscode.window.showTextDocument(uri);
+        } catch {
+            // ディレクトリ作成の改善
+            try {
+                const dirUri = vscode.Uri.file(path.dirname(uri.fsPath));
+                await vscode.workspace.fs.createDirectory(dirUri);
+
+                const template = configManager.getTemplate();
+                const data = new TextEncoder().encode(template);
+                await vscode.workspace.fs.writeFile(uri, data);
+                await vscode.window.showTextDocument(uri);
+            } catch (createError) {
+                vscode.window.showErrorMessage(
+                    `Failed to create file: ${createError instanceof Error ? createError.message : String(createError)}`
+                );
+            }
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(
+            `WikiLink operation failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+    }
+}
+```
+
+### 15.4 テスト戦略
+
+#### 15.4.1 PathUtil単体テスト
+```typescript
+// tests/unit/utils/PathUtil.test.ts
+describe('PathUtil', () => {
+    describe('isAbsolutePath', () => {
+        it('should detect Unix absolute paths', () => {
+            expect(PathUtil.isAbsolutePath('/usr/local/bin')).toBe(true);
+        });
+
+        it('should detect Windows drive letter paths', () => {
+            expect(PathUtil.isAbsolutePath('C:\\Users\\test')).toBe(true);
+            expect(PathUtil.isAbsolutePath('D:/data')).toBe(true);
+        });
+
+        it('should detect Windows UNC paths', () => {
+            expect(PathUtil.isAbsolutePath('\\\\server\\share')).toBe(true);
+        });
+
+        it('should reject relative paths', () => {
+            expect(PathUtil.isAbsolutePath('relative/path')).toBe(false);
+            expect(PathUtil.isAbsolutePath('./current')).toBe(false);
+        });
+    });
+
+    describe('sanitizeFileName', () => {
+        it('should replace special characters', () => {
+            expect(PathUtil.sanitizeFileName('file:name*')).toBe('file-name-');
+        });
+
+        it('should handle Windows reserved names', () => {
+            expect(PathUtil.sanitizeFileName('CON')).toBe('_CON');
+            expect(PathUtil.sanitizeFileName('PRN')).toBe('_PRN');
+        });
+
+        it('should remove trailing periods', () => {
+            expect(PathUtil.sanitizeFileName('file...')).toBe('file');
+        });
+    });
+});
+```
+
+#### 15.4.2 統合テスト
+- Windows環境での実際のファイル作成テスト
+- UNCパスでのアクセステスト
+- エラー時のフォールバック動作テスト
+
+### 15.5 パフォーマンス考慮
+
+#### 15.5.1 最適化ポイント
+- ファイル存在チェックのキャッシュ化
+- バッチファイル操作でのI/O最適化
+- エラーハンドリングでの詳細ログとユーザーフィードバックの分離
+
+#### 15.5.2 監視指標
+- ファイル作成処理時間 < 200ms (Windows)
+- エラー率 < 1% (通常操作)
+- メモリ使用量増加 < 5MB
+
+### 15.6 後方互換性
+
+#### 15.6.1 既存設定の維持
+- 既存のvaultRoot設定は引き続き動作
+- ファイル名変換戦略の互換性維持
+- エラーメッセージの改善（但し機能は維持）
+
+#### 15.6.2 移行戦略
+- 段階的デプロイメント
+- ユーザー設定の自動移行（必要に応じて）
+- デバッグ版での事前検証
+
 ---
 
-**文書バージョン**: 1.3
-**最終更新**: 2025-09-18
-**更新内容**: 設定可能DailyNote機能、Settings UI改善、テストアイソレーション設計を追加
+**文書バージョン**: 1.4
+**最終更新**: 2025-09-21
+**更新内容**: Windows ファイルパス処理とコマンド登録改善設計を追加
