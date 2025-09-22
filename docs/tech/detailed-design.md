@@ -1519,8 +1519,124 @@ describe('PathUtil', () => {
 - ユーザー設定の自動移行（必要に応じて）
 - デバッグ版での事前検証
 
+## 16. Extension Activation Fix (v0.4.4 hotfix)
+
+### 16.1 問題の特定
+VS Code拡張機能の起動時に以下のエラーが発生：
+
+```
+Error: Cannot find module 'c:\Users\RYOIKEDA\Documents\training\obsidianForCode\out\src\extension.js'
+Activating extension obsidianforcode.obsidianforcode failed due to an error
+```
+
+エラーログの詳細分析により、VS Codeが`obsd.openDailyNote`コマンドで拡張機能を起動しようとしているが、package.jsonの`activationEvents`にこのコマンドが含まれていないことが判明。
+
+### 16.2 根本原因分析
+
+#### 16.2.1 activationEvents設定の不整合
+```json
+// 問題のあった設定
+"activationEvents": [
+  "onLanguage:markdown",
+  "onCommand:obsd.openOrCreateWikiLink",
+  "onCommand:obsd.insertDate",
+  "onCommand:obsd.insertTime",
+  "onCommand:obsd.preview"
+  // ❌ "onCommand:obsd.openDailyNote" が欠落
+]
+
+// commands定義には存在
+"commands": [
+  {
+    "command": "obsd.openDailyNote",  // ✅ コマンドは定義済み
+    "title": "Obsidian for Code: Open Daily Note"
+  }
+]
+```
+
+#### 16.2.2 影響範囲
+- DailyNote機能の完全な動作不能
+- VS Code起動時のエラーメッセージ
+- ユーザー体験の重大な悪化
+
+### 16.3 解決策の実装
+
+#### 16.3.1 修正内容
+package.jsonの`activationEvents`配列に欠落していたイベントを追加：
+
+```json
+"activationEvents": [
+  "onLanguage:markdown",
+  "onCommand:obsd.openOrCreateWikiLink",
+  "onCommand:obsd.insertDate",
+  "onCommand:obsd.insertTime",
+  "onCommand:obsd.preview",
+  "onCommand:obsd.openDailyNote"  // ✅ 追加
+]
+```
+
+#### 16.3.2 検証手順
+1. **コンパイル成功確認**: `npm run compile`
+2. **Lint チェック**: `npm run lint`
+3. **起動イベント整合性**: activationEventsとcommands定義の一致確認
+
+### 16.4 予防策の設計
+
+#### 16.4.1 チェックリスト制定
+新しいコマンドを追加する際の必須確認項目：
+1. `package.json` の `contributes.commands` への追加
+2. `package.json` の `activationEvents` への対応イベント追加
+3. `src/extension.ts` でのコマンド登録実装
+4. テストケースの追加
+
+#### 16.4.2 自動化検討
+将来の改善として、以下の自動チェック機能を検討：
+```typescript
+// 例: package.json整合性チェック関数
+function validatePackageJsonConsistency() {
+  const commands = packageJson.contributes.commands.map(cmd => cmd.command);
+  const activationEvents = packageJson.activationEvents
+    .filter(event => event.startsWith('onCommand:'))
+    .map(event => event.replace('onCommand:', ''));
+
+  const missingActivations = commands.filter(cmd =>
+    !activationEvents.includes(cmd)
+  );
+
+  if (missingActivations.length > 0) {
+    throw new Error(`Missing activation events: ${missingActivations.join(', ')}`);
+  }
+}
+```
+
+### 16.5 アーキテクチャ上の学習
+
+#### 16.5.1 VS Code Extension Activation設計原則
+- **完全性**: すべてのコマンドに対応するactivationEventが必要
+- **一貫性**: package.json設定とコード実装の整合性
+- **信頼性**: 起動失敗がユーザー体験に与える重大な影響
+
+#### 16.5.2 設定管理ベストプラクティス
+- 設定ファイル間の依存関係の明示的管理
+- 変更時の整合性チェック工程の組み込み
+- エラーメッセージの明確化（デバッグ情報の充実）
+
+### 16.6 影響と効果
+
+#### 16.6.1 修正前後の比較
+| 項目 | 修正前 | 修正後 |
+|------|--------|--------|
+| DailyNote機能 | 完全に動作不能 | 正常動作 |
+| 拡張機能起動 | エラーで失敗 | 正常起動 |
+| ユーザー体験 | 重大な問題 | 期待通りの動作 |
+
+#### 16.6.2 品質向上
+- 拡張機能の信頼性向上
+- 設定管理プロセスの改善
+- ドキュメント化による再発防止
+
 ---
 
-**文書バージョン**: 1.4
-**最終更新**: 2025-09-21
-**更新内容**: Windows ファイルパス処理とコマンド登録改善設計を追加
+**文書バージョン**: 1.5
+**最終更新**: 2025-09-22
+**更新内容**: Extension Activation Fix設計を追加
