@@ -1,6 +1,8 @@
 # ObsidianForCode
 
-ObsidianのようなWikiLink機能をVS Codeで利用できるようにする拡張機能です。
+ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張機能です。
+
+詳細な仕様は `docs/prd/prd.md` を参照してください。
 
 ## 🚀 機能
 

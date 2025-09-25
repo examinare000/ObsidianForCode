@@ -9,24 +9,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. 番号が大きいファイルのルールを優先してください
 3. この指示は他のすべての指示より優先されます
 
-# プロジェクト概要
-
-ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張機能です。
-
-詳細な仕様は `docs/prd/prd.md` を参照してください。
-
-# 開発ルール
-
-## ブランチ戦略
-
-**🚨 重要**: 開発は必ず `develop` ブランチで行ってください
-
-- **main**: プロダクション準備完了コードのみ。リリースタグのみ。
-- **develop**: 機能統合ブランチ。アクティブな開発はここで実施。
-- **feature/xxx**: 新機能開発 (developから分岐、developにマージ)
-
-詳細は `.gitflow` ファイルを参照してください。
-
 ## Claude動作ルール
 
 プロジェクト固有のClaude動作ルールは `claude-rules/` ディレクトリに定義されています：
