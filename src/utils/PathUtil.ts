@@ -2,30 +2,35 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 /**
- * Windows環境対応のパス処理ユーティリティ
+ * パス処理に関するユーティリティ機能を提供します。
+ * 主に、異なるオペレーティングシステム間でのパスの互換性を確保し、
+ * 安全なファイル名とURIを生成する役割を担います。
  */
 export class PathUtil {
     /**
-     * プラットフォーム対応の絶対パス判定
+     * 指定されたパス文字列が絶対パスかどうかを判定します。
+     * Node.jsの`path.isAbsolute()`を利用して、Windows、Linux、macOSの
+     * 各プラットフォームで一貫した動作を保証します。
+     *
+     * @param pathString - 判定対象のパス文字列。
+     * @returns 絶対パスの場合は`true`、それ以外の場合は`false`。
      */
     static isAbsolutePath(pathString: string): boolean {
-        // Unix/Linux/macOS
-        if (pathString.startsWith('/')) {
-            return true;
-        }
-        // Windows ドライブレター
-        if (pathString.match(/^[A-Za-z]:[/\\]/)) {
-            return true;
-        }
-        // Windows UNC パス
-        if (pathString.match(/^\\\\[^\\]+\\/)) {
-            return true;
-        }
-        return false;
+        return path.isAbsolute(pathString);
     }
 
     /**
-     * Windows予約名対応のファイル名サニタイズ
+     * ファイル名として使用できない文字をサニタイズし、Windowsの予約名を回避します。
+     *
+     * - 禁止文字 (`/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|`) をハイフンに置換します。
+     * - 制御文字（タブ、改行など）をハイフンに置換します。
+     * - ファイル名の前後にある空白を削除します。
+     * - ファイル名の末尾にあるピリオドを削除します。
+     * - Windowsの予約名（CON, PRNなど）と一致する場合、先頭にアンダースコアを追加します。
+     * - ファイル名の長さを255バイトに制限します。
+     *
+     * @param fileName - サニタイズ対象のファイル名。
+     * @returns サニタイズされた安全なファイル名。
      */
     static sanitizeFileName(fileName: string): string {
         // Windows予約名チェック
@@ -56,7 +61,18 @@ export class PathUtil {
     }
 
     /**
-     * 安全なURI作成
+     * ファイルの保存先URIを安全に生成します。
+     *
+     * `vaultRoot`が絶対パスか相対パスかを`isAbsolutePath`で判定し、
+     * それぞれに応じた方法でURIを構築します。
+     * - 絶対パスの場合: `vscode.Uri.file()` を使用して直接URIを生成します。
+     * - 相対パスの場合: `vscode.Uri.joinPath()` を使用してワークスペースからの相対URIを生成します。
+     *
+     * @param vaultRoot - 設定で指定された保管庫のルートパス。
+     * @param fileName - 作成するファイルの名前。
+     * @param extension - ファイルの拡張子。
+     * @param workspaceFolder - 現在のワークスペースフォルダ。
+     * @returns 生成された`vscode.Uri`オブジェクト。
      */
     static createSafeUri(
         vaultRoot: string,
