@@ -1,39 +1,14 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
 import { WikiLinkContextProvider } from '../../../src/providers/WikiLinkContextProvider';
-
-interface MockPosition {
-    line: number;
-    character: number;
-}
-
-interface MockRange {
-    start: MockPosition;
-    end: MockPosition;
-}
-
-interface MockTextDocument {
-    languageId: string;
-    getText(): string;
-    positionAt(offset: number): MockPosition;
-    offsetAt(position: MockPosition): number;
-}
-
-interface MockTextEditor {
-    document: MockTextDocument;
-    selection: {
-        active: MockPosition;
-        start: MockPosition;
-        end: MockPosition;
-    };
-}
+import type { Position, Range, TextDocument, TextEditor } from '../../../src/types/vscode-test-types';
 
 interface MockExtensionContext {
     subscriptions: any[];
 }
 
 // VS Codeモック
-let mockActiveEditor: MockTextEditor | undefined;
+let mockActiveEditor: TextEditor | undefined;
 let mockContext: string | undefined;
 const mockCommands: { [key: string]: any } = {};
 
@@ -78,6 +53,7 @@ describe('WikiLink キーバインド統合テスト', () => {
 
             mockActiveEditor = {
                 document: {
+                    uri: { scheme: 'file', fsPath: '/test/file.md' } as any,
                     languageId: 'markdown',
                     getText: () => testContent,
                     positionAt: (offset: number) => {
@@ -88,7 +64,7 @@ describe('WikiLink キーバインド統合テスト', () => {
                             character: lines[lines.length - 1].length
                         };
                     },
-                    offsetAt: (position: MockPosition) => {
+                    offsetAt: (position: Position) => {
                         const lines = testContent.split('\n');
                         let offset = 0;
                         for (let i = 0; i < position.line; i++) {
@@ -115,10 +91,11 @@ describe('WikiLink キーバインド統合テスト', () => {
 
             mockActiveEditor = {
                 document: {
+                    uri: { scheme: 'file', fsPath: '/test/file.md' } as any,
                     languageId: 'markdown',
                     getText: () => testContent,
                     positionAt: (offset: number) => ({ line: 0, character: offset }),
-                    offsetAt: (position: MockPosition) => position.character
+                    offsetAt: (position: Position) => position.character
                 },
                 selection: {
                     active: { line: 2, character: 5 }, // 'is no' の位置（WikiLink外）
@@ -135,10 +112,11 @@ describe('WikiLink キーバインド統合テスト', () => {
         it('Markdownファイル以外では常に false になる', () => {
             mockActiveEditor = {
                 document: {
+                    uri: { scheme: 'file', fsPath: '/test/file.ts' } as any,
                     languageId: 'typescript',
                     getText: () => '// [[Simple Page]]',
                     positionAt: (offset: number) => ({ line: 0, character: offset }),
-                    offsetAt: (position: MockPosition) => position.character
+                    offsetAt: (position: Position) => position.character
                 },
                 selection: {
                     active: { line: 0, character: 5 },
@@ -166,6 +144,7 @@ This document contains various WikiLink patterns to test the extension:
 
             mockActiveEditor = {
                 document: {
+                    uri: { scheme: 'file', fsPath: '/sample/test-document.md' } as any,
                     languageId: 'markdown',
                     getText: () => sampleContent,
                     positionAt: (offset: number) => {
@@ -175,7 +154,7 @@ This document contains various WikiLink patterns to test the extension:
                             character: lines[lines.length - 1].length
                         };
                     },
-                    offsetAt: (position: MockPosition) => {
+                    offsetAt: (position: Position) => {
                         const lines = sampleContent.split('\n');
                         let offset = 0;
                         for (let i = 0; i < position.line; i++) {
