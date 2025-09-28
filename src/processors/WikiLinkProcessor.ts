@@ -1,11 +1,11 @@
+import type { SlugStrategy } from '../managers/ConfigurationManager';
+
 export interface ParsedWikiLink {
     readonly pageName: string;
     readonly displayName?: string;
     readonly heading?: string;
     readonly isAlias: boolean;
 }
-
-export type SlugStrategy = 'passthrough' | 'kebab-case' | 'snake_case';
 
 export interface WikiLinkProcessorOptions {
     readonly slugStrategy?: SlugStrategy;

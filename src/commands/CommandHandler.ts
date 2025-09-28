@@ -1,25 +1,7 @@
 import { WikiLinkProcessor } from '../processors/WikiLinkProcessor';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { DateTimeFormatter } from '../utils/DateTimeFormatter';
-
-// テスト用のインターフェース
-interface Position {
-    line: number;
-    character: number;
-}
-
-interface TextDocument {
-    uri: any;
-    languageId: string;
-    getText(): string;
-    positionAt(offset: number): Position;
-    offsetAt(position: Position): number;
-}
-
-interface TextEditor {
-    document: TextDocument;
-    selection: { active: Position; start: Position; end: Position };
-}
+import type { Position, Uri, TextDocument, TextEditor } from '../types/vscode-test-types';
 
 export class CommandHandler {
     private wikiLinkProcessor: WikiLinkProcessor;
@@ -28,10 +10,10 @@ export class CommandHandler {
     
     // テスト用のファクトリ関数
     getActiveEditor?: () => TextEditor | null;
-    fileExists?: (uri: any) => Promise<boolean>;
-    createFile?: (uri: any, content: string) => Promise<void>;
-    openFile?: (uri: any) => Promise<void>;
-    insertText?: (uri: any, position: Position, text: string) => Promise<boolean>;
+    fileExists?: (uri: Uri) => Promise<boolean>;
+    createFile?: (uri: Uri, content: string) => Promise<void>;
+    openFile?: (uri: Uri) => Promise<void>;
+    insertText?: (uri: Uri, position: Position, text: string) => Promise<boolean>;
     showMessage?: (message: string) => void;
     
     constructor(configurationManager?: ConfigurationManager) {
@@ -63,7 +45,12 @@ export class CommandHandler {
             const extension = this.configurationManager?.getNoteExtension() || '.md';
             const vaultRoot = this.configurationManager?.getVaultRoot() || '';
             
-            const filePath = { path: `${vaultRoot}/${fileName}${extension}` };
+            const fullPath = `${vaultRoot}/${fileName}${extension}`;
+            const filePath: Uri = {
+                path: fullPath,
+                fsPath: fullPath,
+                toString: () => fullPath
+            };
             
             const exists = this.fileExists ? await this.fileExists(filePath) : false;
             

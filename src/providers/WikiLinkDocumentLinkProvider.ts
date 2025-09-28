@@ -1,23 +1,6 @@
 import { WikiLinkProcessor } from '../processors/WikiLinkProcessor';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
-
-// VS Code APIの型定義（テスト用）
-interface DocumentLink {
-    range: any;
-    target?: any;
-}
-
-interface TextDocument {
-    uri: any;
-    languageId: string;
-    getText(): string;
-    positionAt(offset: number): any;
-    offsetAt(position: any): number;
-}
-
-interface DocumentLinkProvider {
-    provideDocumentLinks(document: TextDocument): DocumentLink[];
-}
+import type { Position, Range, Uri, DocumentLink, TextDocument, DocumentLinkProvider } from '../types/vscode-test-types';
 
 export class WikiLinkDocumentLinkProvider implements DocumentLinkProvider {
     private wikiLinkProcessor: WikiLinkProcessor;
@@ -59,8 +42,12 @@ export class WikiLinkDocumentLinkProvider implements DocumentLinkProvider {
                 const vaultRoot = this.configurationManager?.getVaultRoot() || '';
                 
                 // URIをモック可能にする
-                const filePath = this.createUri ? this.createUri(`${vaultRoot}/${fileName}${extension}`) : 
-                    { path: `${vaultRoot}/${fileName}${extension}` };
+                const fullPath = `${vaultRoot}/${fileName}${extension}`;
+                const filePath: Uri = this.createUri ? this.createUri(fullPath) : {
+                    path: fullPath,
+                    fsPath: fullPath,
+                    toString: () => fullPath
+                };
                 
                 const documentLink = this.createDocumentLink ? 
                     this.createDocumentLink(range, filePath) : 
@@ -77,7 +64,7 @@ export class WikiLinkDocumentLinkProvider implements DocumentLinkProvider {
     }
     
     // テスト用のファクトリ関数（VS Code実装で上書きされる）
-    createRange?: (start: any, end: any) => any;
-    createUri?: (path: string) => any;
-    createDocumentLink?: (range: any, target?: any) => DocumentLink;
+    createRange?: (start: Position, end: Position) => Range;
+    createUri?: (path: string) => Uri;
+    createDocumentLink?: (range: Range, target?: Uri) => DocumentLink;
 }
