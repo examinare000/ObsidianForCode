@@ -58,6 +58,19 @@ const vscode = {
 (global as any).vscode = vscode;
 
 // requireでvscodeモジュールが要求された場合のモック
+const Module = require('module');
+const originalResolveFilename = Module._resolveFilename;
+Module._resolveFilename = function (request: string, ...args: any[]) {
+    if (request === 'vscode') {
+        return 'vscode';
+    }
+    return originalResolveFilename.apply(this, [request, ...args]);
+};
+
 require.cache['vscode'] = {
-    exports: vscode
+    id: 'vscode',
+    filename: 'vscode',
+    loaded: true,
+    exports: vscode,
+    paths: []
 } as any;

@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Main extension entry point for Obsidian for Code VS Code extension.
+ * Provides WikiLink functionality, daily notes, and date/time insertion commands for Markdown files.
+ * Manages extension lifecycle, command registration, and provider initialization.
+ *
+ * @author ObsidianForCode Team
+ * @version 1.0.0
+ */
+
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { WikiLinkProcessor } from './processors/WikiLinkProcessor';
@@ -7,6 +16,13 @@ import { WikiLinkContextProvider } from './providers/WikiLinkContextProvider';
 import { DailyNoteManager } from './managers/DailyNoteManager';
 import { PathUtil } from './utils/PathUtil';
 
+/**
+ * Activates the Obsidian for Code extension.
+ * Initializes all managers, providers, and registers commands and event listeners.
+ *
+ * @param context - The VS Code extension context for managing subscriptions and resources
+ * @throws {Error} When critical components fail to initialize
+ */
 export function activate(context: vscode.ExtensionContext) {
     const errors: string[] = [];
 
@@ -160,17 +176,37 @@ export function activate(context: vscode.ExtensionContext) {
     }
 }
 
-// VS Code統合WikiLinkDocumentLinkProvider
+/**
+ * VS Code integrated WikiLink Document Link Provider.
+ * Provides clickable links for WikiLink references in Markdown files.
+ * Converts WikiLink syntax [[Page Name]] into navigable VS Code document links.
+ *
+ * @class WikiLinkDocumentLinkProvider
+ * @implements {vscode.DocumentLinkProvider}
+ */
 class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
     private wikiLinkProcessor: WikiLinkProcessor;
     private configManager: ConfigurationManager;
     
+    /**
+     * Creates a new WikiLinkDocumentLinkProvider instance.
+     *
+     * @param configManager - Configuration manager for accessing extension settings
+     */
     constructor(configManager: ConfigurationManager) {
         this.configManager = configManager;
         const slugStrategy = this.configManager.getSlugStrategy();
         this.wikiLinkProcessor = new WikiLinkProcessor({ slugStrategy });
     }
     
+    /**
+     * Provides document links for WikiLink references in the given document.
+     * Scans the document for [[Page Name]] patterns and converts them to clickable links.
+     *
+     * @param document - The VS Code text document to scan for WikiLinks
+     * @returns Array of document links found in the document
+     * @throws {Error} When link processing fails
+     */
     provideDocumentLinks(document: vscode.TextDocument): vscode.DocumentLink[] {
         if (document.languageId !== 'markdown') {
             return [];
@@ -223,7 +259,14 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
     }
 }
 
-// Command implementations
+/**
+ * Opens or creates a WikiLink file based on the cursor position.
+ * Extracts WikiLink text at the current cursor position and either opens the existing file
+ * or creates a new file using the configured template.
+ *
+ * @param configManager - Configuration manager for accessing extension settings
+ * @throws {Error} When file creation or opening fails
+ */
 async function openOrCreateWikiLink(configManager: ConfigurationManager): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -295,6 +338,13 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
     }
 }
 
+/**
+ * Inserts the current date at the cursor position using the configured format.
+ *
+ * @param configManager - Configuration manager for accessing date format settings
+ * @param dateTimeFormatter - Formatter for converting dates to strings
+ * @throws {Error} When text insertion fails
+ */
 async function insertDate(configManager: ConfigurationManager, dateTimeFormatter: DateTimeFormatter): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -310,6 +360,13 @@ async function insertDate(configManager: ConfigurationManager, dateTimeFormatter
     await vscode.workspace.applyEdit(edit);
 }
 
+/**
+ * Inserts the current time at the cursor position using the configured format.
+ *
+ * @param configManager - Configuration manager for accessing time format settings
+ * @param dateTimeFormatter - Formatter for converting times to strings
+ * @throws {Error} When text insertion fails
+ */
 async function insertTime(configManager: ConfigurationManager, dateTimeFormatter: DateTimeFormatter): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -325,6 +382,13 @@ async function insertTime(configManager: ConfigurationManager, dateTimeFormatter
     await vscode.workspace.applyEdit(edit);
 }
 
+/**
+ * Shows a preview of the current Markdown document.
+ * Currently displays a placeholder message. Future implementation will provide
+ * enhanced preview functionality.
+ *
+ * @throws {Error} When preview cannot be displayed
+ */
 async function showPreview(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.languageId !== 'markdown') {
@@ -335,6 +399,14 @@ async function showPreview(): Promise<void> {
     vscode.window.showInformationMessage('Preview feature coming soon!');
 }
 
+/**
+ * Extracts WikiLink text at the specified position in the document.
+ * Searches for [[]] patterns around the cursor position and returns the link text.
+ *
+ * @param document - The VS Code text document to search
+ * @param position - The cursor position to search around
+ * @returns The WikiLink text without brackets, or empty string if none found
+ */
 function getWikiLinkAtPosition(document: vscode.TextDocument, position: vscode.Position): string {
     const text = document.getText();
     const offset = document.offsetAt(position);
@@ -364,4 +436,9 @@ function getWikiLinkAtPosition(document: vscode.TextDocument, position: vscode.P
     return match[1];
 }
 
+/**
+ * Deactivates the extension.
+ * Called when the extension is being deactivated. Currently performs no cleanup
+ * as all resources are managed through VS Code's subscription system.
+ */
 export function deactivate() {}

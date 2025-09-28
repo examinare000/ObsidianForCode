@@ -1,19 +1,36 @@
+/**
+ * @fileoverview Path utilities for cross-platform file system operations.
+ * Provides safe path handling, file name sanitization, and URI creation utilities
+ * with support for both absolute and relative paths across different operating systems.
+ *
+ * @author ObsidianForCode Team
+ * @version 1.0.0
+ */
+
 import * as vscode from 'vscode';
 import * as path from 'path';
 
 /**
- * パス処理に関するユーティリティ機能を提供します。
- * 主に、異なるオペレーティングシステム間でのパスの互換性を確保し、
- * 安全なファイル名とURIを生成する役割を担います。
+ * Utility class for cross-platform path handling and file system operations.
+ * Ensures compatibility across Windows, Linux, and macOS by providing safe
+ * file name sanitization, path resolution, and URI creation methods.
+ *
+ * @class PathUtil
  */
 export class PathUtil {
     /**
-     * 指定されたパス文字列が絶対パスかどうかを判定します。
-     * Node.jsの`path.isAbsolute()`を利用して、Windows、Linux、macOSの
-     * 各プラットフォームで一貫した動作を保証します。
+     * Determines if the specified path string is an absolute path.
+     * Uses Node.js `path.isAbsolute()` to ensure consistent behavior
+     * across Windows, Linux, and macOS platforms.
      *
-     * @param pathString - 判定対象のパス文字列。
-     * @returns 絶対パスの場合は`true`、それ以外の場合は`false`。
+     * @param pathString - The path string to check
+     * @returns True if the path is absolute, false otherwise
+     * @example
+     * ```typescript
+     * PathUtil.isAbsolutePath('/home/user/file.txt')  // true on Unix
+     * PathUtil.isAbsolutePath('C:\\Users\\file.txt')   // true on Windows
+     * PathUtil.isAbsolutePath('relative/path.txt')   // false
+     * ```
      */
     static isAbsolutePath(pathString: string): boolean {
         return path.isAbsolute(pathString);
