@@ -4,6 +4,12 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 
 詳細な仕様は `docs/prd/prd.md` を参照してください。
 
+## 📋 リリース情報
+
+最新の更新内容やバグ修正については、[リリースノート](./docs/releases/)をご確認ください。
+
+- **最新**: [v0.4.5](./docs/releases/v0.4.5.md) - Windows環境でのコマンド登録問題修正
+
 ## 🚀 機能
 
 ### WikiLinkサポート

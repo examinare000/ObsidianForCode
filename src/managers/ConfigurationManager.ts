@@ -34,7 +34,7 @@ export interface Disposable {
 export interface WorkspaceConfiguration {
     get<T>(key: string, defaultValue?: T): T;
     has(key: string): boolean;
-    update(key: string, value: any): Thenable<void> | Promise<void>;
+    update(key: string, value: string | number | boolean | object | null): Thenable<void> | Promise<void>;
 }
 
 export class ConfigurationManager {
