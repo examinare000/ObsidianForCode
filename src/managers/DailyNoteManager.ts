@@ -1,16 +1,41 @@
+/**
+ * @fileoverview Daily note management functionality for Obsidian for Code extension.
+ * Provides automated daily note creation, template management, and date-based file organization.
+ *
+ * @author ObsidianForCode Team
+ * @version 1.0.0
+ */
+
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { ConfigurationManager } from './ConfigurationManager';
 import { DateTimeFormatter } from '../utils/DateTimeFormatter';
 
+/**
+ * Manages daily note creation and organization.
+ * Handles file naming, path resolution, template loading, and automatic directory creation
+ * for date-based notes following user configuration.
+ *
+ * @class DailyNoteManager
+ */
 export class DailyNoteManager {
+    /**
+     * Creates a new DailyNoteManager instance.
+     *
+     * @param configManager - Configuration manager for accessing daily note settings
+     * @param dateTimeFormatter - Formatter for converting dates to file names
+     */
     constructor(
         private configManager: ConfigurationManager,
         private dateTimeFormatter: DateTimeFormatter
     ) {}
 
     /**
-     * 指定日付のDailyNoteファイル名を生成
+     * Generates a daily note file name for the specified date.
+     * Uses the configured date format and note extension.
+     *
+     * @param date - The date to generate a file name for
+     * @returns The formatted file name with extension
      */
     getDailyNoteFileName(date: Date): string {
         const dateFormat = this.configManager.getDateFormat();
@@ -20,7 +45,13 @@ export class DailyNoteManager {
     }
 
     /**
-     * DailyNoteファイルの完全パスを解決
+     * Resolves the complete path for a daily note file.
+     * Handles both absolute and relative vault root paths, combining them with
+     * the daily note directory and generated file name.
+     *
+     * @param workspaceFolder - The VS Code workspace folder
+     * @param date - The date for the daily note
+     * @returns Complete URI for the daily note file
      */
     getDailyNotePath(workspaceFolder: vscode.WorkspaceFolder, date: Date): vscode.Uri {
         const fileName = this.getDailyNoteFileName(date);
@@ -39,7 +70,13 @@ export class DailyNoteManager {
     }
 
     /**
-     * テンプレートファイルの内容を読み込み
+     * Loads template content from the configured template file.
+     * Attempts to read the daily note template file and returns its content.
+     * Returns empty string if template file is not found or not configured.
+     *
+     * @param workspaceFolder - The VS Code workspace folder
+     * @returns Promise resolving to template content or empty string
+     * @throws {Error} When template file cannot be read (non-existence is handled gracefully)
      */
     async getTemplateContent(workspaceFolder: vscode.WorkspaceFolder): Promise<string> {
         const templatePath = this.configManager.getDailyNoteTemplate();
@@ -71,7 +108,13 @@ export class DailyNoteManager {
     }
 
     /**
-     * DailyNoteを開設または作成するメイン処理
+     * Opens an existing daily note or creates a new one for the specified date.
+     * Main entry point for daily note functionality. Handles file existence checking,
+     * directory creation, template application, and file opening.
+     *
+     * @param workspaceFolder - The VS Code workspace folder
+     * @param date - The date for the daily note (defaults to current date)
+     * @throws {Error} When file creation or opening fails
      */
     async openOrCreateDailyNote(workspaceFolder: vscode.WorkspaceFolder, date: Date = new Date()): Promise<void> {
         const dailyNoteUri = this.getDailyNotePath(workspaceFolder, date);

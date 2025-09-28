@@ -1,12 +1,30 @@
+/**
+ * @fileoverview Context provider for WikiLink cursor detection in VS Code.
+ * Manages the 'obsd.inWikiLink' context variable for conditional command activation
+ * and UI element visibility based on cursor position within WikiLink syntax.
+ *
+ * @author ObsidianForCode Team
+ * @version 1.0.0
+ */
+
 import * as vscode from 'vscode';
 
 /**
- * WikiLink内にカーソルがあるかどうかを検出し、
- * 'obsd.inWikiLink' コンテキストを管理するプロバイダー
+ * Provides context awareness for WikiLink cursor positioning.
+ * Monitors cursor position and sets VS Code context variables to enable
+ * conditional command activation when the cursor is within WikiLink syntax.
+ *
+ * @class WikiLinkContextProvider
  */
 export class WikiLinkContextProvider {
     private disposables: vscode.Disposable[] = [];
     
+    /**
+     * Creates a new WikiLinkContextProvider instance.
+     * Sets up event listeners for cursor movement and editor changes.
+     *
+     * @param context - VS Code extension context for managing subscriptions
+     */
     constructor(context: vscode.ExtensionContext) {
         // カーソル位置変更時の監視
         const selectionChangeListener = vscode.window.onDidChangeTextEditorSelection(
@@ -26,14 +44,30 @@ export class WikiLinkContextProvider {
         context.subscriptions.push(...this.disposables);
     }
     
+    /**
+     * Handles text editor selection change events.
+     *
+     * @param event - The selection change event from VS Code
+     */
     private onSelectionChange(event: vscode.TextEditorSelectionChangeEvent): void {
         this.updateContext(event.textEditor);
     }
     
+    /**
+     * Handles active text editor change events.
+     *
+     * @param editor - The newly active text editor, or undefined if none
+     */
     private onActiveEditorChange(editor: vscode.TextEditor | undefined): void {
         this.updateContext(editor);
     }
     
+    /**
+     * Updates the 'obsd.inWikiLink' context variable based on cursor position.
+     * Checks if the cursor is within WikiLink syntax and sets the context accordingly.
+     *
+     * @param editor - The text editor to check, defaults to active editor
+     */
     private updateContext(editor?: vscode.TextEditor): void {
         editor = editor || vscode.window.activeTextEditor;
 
@@ -53,6 +87,14 @@ export class WikiLinkContextProvider {
         void vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', inWikiLink);
     }
     
+    /**
+     * Determines if the given position is within WikiLink syntax.
+     * Scans the document for [[]] patterns and checks if the position falls within any.
+     *
+     * @param document - The text document to scan
+     * @param position - The cursor position to check
+     * @returns True if position is within WikiLink brackets, false otherwise
+     */
     private isPositionInWikiLink(document: vscode.TextDocument, position: vscode.Position): boolean {
         const text = document.getText();
         const offset = document.offsetAt(position);
@@ -75,6 +117,10 @@ export class WikiLinkContextProvider {
         return false;
     }
     
+    /**
+     * Disposes of all event listeners and cleans up resources.
+     * Called when the provider is no longer needed.
+     */
     dispose(): void {
         this.disposables.forEach(disposable => disposable.dispose());
         this.disposables = [];
