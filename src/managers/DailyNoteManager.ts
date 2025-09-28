@@ -4,10 +4,16 @@ import { ConfigurationManager } from './ConfigurationManager';
 import { DateTimeFormatter } from '../utils/DateTimeFormatter';
 
 export class DailyNoteManager {
+    private configManager: ConfigurationManager;
+    private dateTimeFormatter: DateTimeFormatter;
+
     constructor(
-        private configManager: ConfigurationManager,
-        private dateTimeFormatter: DateTimeFormatter
-    ) {}
+        configManager: ConfigurationManager,
+        dateTimeFormatter: DateTimeFormatter
+    ) {
+        this.configManager = configManager;
+        this.dateTimeFormatter = dateTimeFormatter;
+    }
 
     /**
      * 指定日付のDailyNoteファイル名を生成

@@ -1,5 +1,6 @@
 import { describe, it, beforeEach } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import { CommandHandler } from '../../../src/commands/CommandHandler';
 
 // VS Code APIのモック
@@ -18,7 +19,15 @@ class MockTextEditor {
 }
 
 class MockTextDocument {
-    constructor(public uri: any, public languageId: string, public text: string) {}
+    public uri: any;
+    public languageId: string;
+    public text: string;
+
+    constructor(uri: any, languageId: string, text: string) {
+        this.uri = uri;
+        this.languageId = languageId;
+        this.text = text;
+    }
     
     getText(range?: any): string {
         if (!range) {
@@ -53,7 +62,13 @@ class MockTextDocument {
 }
 
 class MockUri {
-    constructor(public scheme: string, public path: string) {}
+    public scheme: string;
+    public path: string;
+
+    constructor(scheme: string, path: string) {
+        this.scheme = scheme;
+        this.path = path;
+    }
     
     static file(path: string): MockUri {
         return new MockUri('file', path);

@@ -53,7 +53,14 @@ export class PathUtil {
 
         // 予約名チェック（拡張子を除いたベース名のみ）
         const baseName = sanitized.split('.')[0].trim();
-        if (reservedNames.includes(baseName.toUpperCase())) {
+        const baseNameUpper = baseName.toUpperCase();
+
+        // 完全一致またはハイフンで区切られた予約名をチェック
+        const isReservedName = reservedNames.some(reserved => {
+            return baseNameUpper === reserved || baseNameUpper.startsWith(reserved + '-');
+        });
+
+        if (isReservedName) {
             sanitized = `_${sanitized.trim()}`;
         }
 

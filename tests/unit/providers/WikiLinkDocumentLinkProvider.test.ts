@@ -1,5 +1,6 @@
 import { describe, it, beforeEach } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import { WikiLinkDocumentLinkProvider } from '../../../src/providers/WikiLinkDocumentLinkProvider';
 
 // VS Code APIのモック
@@ -13,7 +14,14 @@ class MockTextDocument {
     public eol: number = 1;
     public lineCount: number;
     
-    constructor(public uri: any, public languageId: string, public text: string) {
+    public uri: any;
+    public languageId: string;
+    public text: string;
+
+    constructor(uri: any, languageId: string, text: string) {
+        this.uri = uri;
+        this.languageId = languageId;
+        this.text = text;
         this.fileName = uri.path;
         this.lineCount = this.text.split('\n').length;
     }
@@ -59,8 +67,12 @@ class MockTextDocument {
 
 class MockUri {
     public fsPath: string;
+    public scheme: string;
+    public path: string;
 
-    constructor(public scheme: string, public path: string) {
+    constructor(scheme: string, path: string) {
+        this.scheme = scheme;
+        this.path = path;
         this.fsPath = path;
     }
 
@@ -74,11 +86,23 @@ class MockUri {
 }
 
 class MockRange {
-    constructor(public start: any, public end: any) {}
+    public start: any;
+    public end: any;
+
+    constructor(start: any, end: any) {
+        this.start = start;
+        this.end = end;
+    }
 }
 
 class MockDocumentLink {
-    constructor(public range: any, public target?: any) {}
+    public range: any;
+    public target?: any;
+
+    constructor(range: any, target?: any) {
+        this.range = range;
+        this.target = target;
+    }
 }
 
 describe('WikiLinkDocumentLinkProvider', () => {

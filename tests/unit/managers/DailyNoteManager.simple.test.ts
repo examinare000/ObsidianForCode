@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 
 // シンプルなテストファイル - DailyNoteManagerの基本機能確認
 describe('DailyNoteManager - Basic Functionality', () => {

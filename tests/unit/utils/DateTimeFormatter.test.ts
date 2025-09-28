@@ -1,5 +1,6 @@
 import { describe, it, beforeEach } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import { DateTimeFormatter } from '../../../src/utils/DateTimeFormatter';
 
 describe('DateTimeFormatter', () => {

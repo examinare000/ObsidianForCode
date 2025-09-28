@@ -1,5 +1,6 @@
 import { describe, it } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 
 describe('デバッグ: パス解決問題の調査', () => {
     describe('VS Code設定模擬テスト', () => {

@@ -1,34 +1,20 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import { WikiLinkContextProvider } from '../../../src/providers/WikiLinkContextProvider';
-import type { Position, Range, TextDocument, TextEditor } from '../../../src/types/vscode-test-types';
 
 interface MockExtensionContext {
     subscriptions: any[];
 }
 
-// VS Codeモック
-let mockActiveEditor: TextEditor | undefined;
+interface Position {
+    line: number;
+    character: number;
+}
+
+// VS Codeモック（setup.tsから継承、テスト固有の変数のみ定義）
+let mockActiveEditor: any;
 let mockContext: string | undefined;
-const mockCommands: { [key: string]: any } = {};
-
-const vscode = {
-    window: {
-        get activeTextEditor() { return mockActiveEditor; },
-        onDidChangeTextEditorSelection: (callback: any) => ({ dispose: () => {} }),
-        onDidChangeActiveTextEditor: (callback: any) => ({ dispose: () => {} })
-    },
-    commands: {
-        executeCommand: (command: string, ...args: any[]) => {
-            if (command === 'setContext') {
-                mockContext = args[1];
-            }
-            return Promise.resolve();
-        }
-    }
-};
-
-// VSCodeモックの設定は require 前に行う
 
 describe('WikiLink キーバインド統合テスト', () => {
     let contextProvider: WikiLinkContextProvider;
@@ -36,8 +22,9 @@ describe('WikiLink キーバインド統合テスト', () => {
 
     beforeEach(() => {
         mockExtensionContext = { subscriptions: [] };
-        mockActiveEditor = undefined;
-        mockContext = undefined;
+        (global as any).mockActiveEditor = undefined;
+        // 初期化時のコンテキスト状態を明示的に設定
+        (global as any).mockContext = null;
     });
 
     afterEach(() => {
@@ -51,7 +38,7 @@ describe('WikiLink キーバインド統合テスト', () => {
             // テストドキュメントの作成
             const testContent = '# Test Document\n\n- [[Simple Page]]\n- [[Another Note]]';
 
-            mockActiveEditor = {
+            (global as any).mockActiveEditor = {
                 document: {
                     uri: { scheme: 'file', fsPath: '/test/file.md' } as any,
                     languageId: 'markdown',
@@ -83,13 +70,13 @@ describe('WikiLink キーバインド統合テスト', () => {
             contextProvider = new WikiLinkContextProvider(mockExtensionContext as any);
 
             // コンテキストがtrueに設定されることを確認
-            expect(mockContext).to.be.true;
+            expect((global as any).mockContext).to.be.true;
         });
 
         it('WikiLink外では obsd.inWikiLink が false になる', () => {
             const testContent = '# Test Document\n\nThis is normal text. [[Simple Page]]';
 
-            mockActiveEditor = {
+            (global as any).mockActiveEditor = {
                 document: {
                     uri: { scheme: 'file', fsPath: '/test/file.md' } as any,
                     languageId: 'markdown',
@@ -106,11 +93,11 @@ describe('WikiLink キーバインド統合テスト', () => {
 
             contextProvider = new WikiLinkContextProvider(mockExtensionContext as any);
 
-            expect(mockContext).to.be.false;
+            expect((global as any).mockContext).to.be.false;
         });
 
         it('Markdownファイル以外では常に false になる', () => {
-            mockActiveEditor = {
+            (global as any).mockActiveEditor = {
                 document: {
                     uri: { scheme: 'file', fsPath: '/test/file.ts' } as any,
                     languageId: 'typescript',
@@ -127,7 +114,7 @@ describe('WikiLink キーバインド統合テスト', () => {
 
             contextProvider = new WikiLinkContextProvider(mockExtensionContext as any);
 
-            expect(mockContext).to.be.false;
+            expect((global as any).mockContext).to.be.false;
         });
     });
 
@@ -142,7 +129,7 @@ This document contains various WikiLink patterns to test the extension:
 - [[Another Note]]
 - [[My Important Document]]`;
 
-            mockActiveEditor = {
+            (global as any).mockActiveEditor = {
                 document: {
                     uri: { scheme: 'file', fsPath: '/sample/test-document.md' } as any,
                     languageId: 'markdown',
@@ -172,7 +159,7 @@ This document contains various WikiLink patterns to test the extension:
 
             contextProvider = new WikiLinkContextProvider(mockExtensionContext as any);
 
-            expect(mockContext).to.be.true;
+            expect((global as any).mockContext).to.be.true;
         });
     });
 });

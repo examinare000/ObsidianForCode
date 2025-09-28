@@ -40,8 +40,11 @@ export interface WorkspaceConfiguration {
 export class ConfigurationManager {
     private static readonly configSection = 'obsd';
     private changeListeners: ((config: ObsdConfiguration) => void)[] = [];
-    
-    constructor(private config: WorkspaceConfiguration) {}
+    private config: WorkspaceConfiguration;
+
+    constructor(config: WorkspaceConfiguration) {
+        this.config = config;
+    }
 
     getVaultRoot(): string {
         return this.config.get<string>('vaultRoot', '');

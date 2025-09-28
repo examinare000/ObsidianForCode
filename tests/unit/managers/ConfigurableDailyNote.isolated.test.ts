@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 
 // 設定可能なDailyNote機能のテスト（vscode依存なし）
 describe('Configurable DailyNote Features (Isolated)', () => {
@@ -6,7 +7,10 @@ describe('Configurable DailyNote Features (Isolated)', () => {
     describe('ConfigurationManager - DailyNote Settings Logic', () => {
         // ConfigurationManager の基本ロジックをテスト
         class TestConfigurationManager {
-            constructor(private config: any) {}
+            private config: any;
+            constructor(config: any) {
+                this.config = config;
+            }
 
             getDailyNoteEnabled(): boolean {
                 return this.config.get('dailyNoteEnabled', true);
@@ -65,10 +69,15 @@ describe('Configurable DailyNote Features (Isolated)', () => {
     describe('DailyNoteManager Logic', () => {
         // DailyNoteManager の基本ロジックをテスト
         class TestDailyNoteManager {
+            private configManager: any;
+            private dateTimeFormatter: any;
             constructor(
-                private configManager: any,
-                private dateTimeFormatter: any
-            ) {}
+                configManager: any,
+                dateTimeFormatter: any
+            ) {
+                this.configManager = configManager;
+                this.dateTimeFormatter = dateTimeFormatter;
+            }
 
             getDailyNoteFileName(date: Date): string {
                 const dateFormat = this.configManager.getDateFormat();

@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-
-// Chaiのセットアップ
+// Chaiのセットアップ - CommonJS形式でインポート
+const { expect } = require('chai');
 (global as any).expect = expect;
 
 // VS Code APIのモック
@@ -20,16 +19,27 @@ const vscode = {
             stat: async () => ({ type: 1 }),
             readFile: async () => new Uint8Array(),
             writeFile: async () => {},
-            createDirectory: async () => {}
+            createDirectory: async () => {},
+            delete: async () => {}
         }
     },
     window: {
         showTextDocument: async () => ({}),
         showErrorMessage: () => {},
-        showInformationMessage: () => {}
+        showInformationMessage: () => {},
+        onDidChangeTextEditorSelection: () => ({ dispose: () => {} }),
+        onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
+        get activeTextEditor() {
+            return (global as any).mockActiveEditor;
+        }
     },
     commands: {
-        executeCommand: () => Promise.resolve(),
+        executeCommand: (command: string, ...args: any[]) => {
+            if (command === 'setContext') {
+                (global as any).mockContext = args[1];
+            }
+            return Promise.resolve();
+        },
         registerCommand: () => ({ dispose: () => {} })
     },
     languages: {
@@ -43,10 +53,20 @@ const vscode = {
         })
     },
     Range: class Range {
-        constructor(public start: any, public end: any) {}
+        public start: any;
+        public end: any;
+        constructor(start: any, end: any) {
+            this.start = start;
+            this.end = end;
+        }
     },
     Position: class Position {
-        constructor(public line: number, public character: number) {}
+        public line: number;
+        public character: number;
+        constructor(line: number, character: number) {
+            this.line = line;
+            this.character = character;
+        }
     },
     FileType: {
         File: 1,
@@ -57,7 +77,23 @@ const vscode = {
 // グローバルなvscodeモックを設定
 (global as any).vscode = vscode;
 
-// requireでvscodeモジュールが要求された場合のモック
-require.cache['vscode'] = {
-    exports: vscode
-} as any;
+// Node.jsモジュール解決のカスタマイズ
+const Module = require('module');
+const originalResolveFilename = Module._resolveFilename;
+
+Module._resolveFilename = function (request: string, parent: any) {
+    if (request === 'vscode') {
+        // 偽のパスを返して、requireで探せるようにする
+        return request;
+    }
+    return originalResolveFilename.apply(this, arguments);
+};
+
+// requireで vscode が要求された場合のモック
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function (id: string) {
+    if (id === 'vscode') {
+        return vscode;
+    }
+    return originalRequire.apply(this, arguments);
+};

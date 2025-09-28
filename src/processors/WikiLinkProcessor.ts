@@ -12,9 +12,12 @@ export interface WikiLinkProcessorOptions {
 }
 
 export class WikiLinkError extends Error {
-    constructor(message: string, public readonly linkText?: string) {
+    public readonly linkText?: string;
+
+    constructor(message: string, linkText?: string) {
         super(message);
         this.name = 'WikiLinkError';
+        this.linkText = linkText;
     }
 }
 

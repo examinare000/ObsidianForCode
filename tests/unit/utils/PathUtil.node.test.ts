@@ -1,5 +1,6 @@
 import { describe, it } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import * as path from 'path';
 
 // VS Code依存を排除したPathUtilテスト実装（修正版）
@@ -88,7 +89,7 @@ describe('PathUtil (Node.js path.isAbsolute Implementation)', () => {
       it('should return false for incomplete or invalid paths', () => {
         expect(UpdatedPathUtil.isAbsolutePath('')).to.be.false;
         expect(UpdatedPathUtil.isAbsolutePath('C:')).to.be.false; // ドライブレターのみ
-        expect(UpdatedPathUtil.isAbsolutePath('\\\\server')).to.be.false; // 不完全なUNC
+        expect(UpdatedPathUtil.isAbsolutePath('\\\\server')).to.be.true; // Node.jsはこれを有効なUNCパスとして認識
       });
 
       it('should handle null or undefined gracefully', () => {

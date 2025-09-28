@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { WikiLinkProcessor } from '../../src/processors/WikiLinkProcessor';

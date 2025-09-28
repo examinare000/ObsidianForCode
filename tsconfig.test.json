@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020",
+    "types": [
+      "mocha",
+      "chai",
+      "node"
+    ],
+    "skipLibCheck": true,
+    "strict": false
+  },
+  "ts-node": {
+    "transpileOnly": false,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
+  "include": [
+    "tests/**/*",
+    "src/**/*"
+  ]
+}

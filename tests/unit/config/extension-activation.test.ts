@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import * as path from 'path';
 import * as fs from 'fs';
 

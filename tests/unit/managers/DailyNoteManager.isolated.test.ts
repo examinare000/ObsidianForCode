@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 
 // DailyNoteManagerが存在しないため失敗するテスト
 describe('DailyNoteManager (TDD Red Phase)', () => {

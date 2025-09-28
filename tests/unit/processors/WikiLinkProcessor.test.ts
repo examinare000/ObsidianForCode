@@ -1,5 +1,6 @@
 import { describe, it } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import { WikiLinkProcessor, ParsedWikiLink, WikiLinkError } from '../../../src/processors/WikiLinkProcessor';
 
 describe('WikiLinkProcessor', () => {

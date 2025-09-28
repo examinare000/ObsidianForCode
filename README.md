@@ -49,7 +49,7 @@ npm run compile
 
 ### テスト実行
 ```bash
-npm run test:unit        # 単体テスト (46個のテスト)
+npm run test:unit        # 単体テスト (158個のテスト)
 npm run test:integration # 統合テスト
 ```
 
@@ -73,8 +73,10 @@ npm run test:integration # 統合テスト
 
 ### 品質保証
 - **Test-Driven Development** - t-wadaのTDD手法を採用
-- **46個の包括的テスト** - Red-Green-Refactorサイクルで開発
+- **158個の包括的テスト** - Red-Green-Refactorサイクルで開発
 - **依存性注入** - テスタブル設計でVS Code API抽象化
+- **標準化されたテストモック** - VS Code API模擬の一貫した構造
+- **クロスプラットフォームテスト** - Windows/POSIX環境での互換性検証
 - **アイソレートテスト** - vscode依存を排除した独立テスト環境
 
 ## 📚 ドキュメント

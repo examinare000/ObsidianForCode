@@ -4,7 +4,13 @@ import { WikiLinkProcessor } from '../../../src/processors/WikiLinkProcessor';
 
 // VS Code APIのモック
 class MockUri {
-    constructor(public fsPath: string, public scheme: string = 'file') {}
+    public fsPath: string;
+    public scheme: string;
+
+    constructor(fsPath: string, scheme: string = 'file') {
+        this.fsPath = fsPath;
+        this.scheme = scheme;
+    }
     
     static file(path: string) {
         return new MockUri(path);
@@ -16,11 +22,23 @@ class MockUri {
 }
 
 class MockRange {
-    constructor(public start: any, public end: any) {}
+    public start: any;
+    public end: any;
+
+    constructor(start: any, end: any) {
+        this.start = start;
+        this.end = end;
+    }
 }
 
 class MockPosition {
-    constructor(public line: number, public character: number) {}
+    public line: number;
+    public character: number;
+
+    constructor(line: number, character: number) {
+        this.line = line;
+        this.character = character;
+    }
 }
 
 class MockFileSystemError extends Error {

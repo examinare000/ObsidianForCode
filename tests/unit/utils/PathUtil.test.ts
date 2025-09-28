@@ -1,5 +1,6 @@
 import { describe, it } from 'mocha';
-import { expect } from 'chai';
+// expect はテストsetup.tsからグローバルにインポート済み
+const expect = (global as any).expect;
 import * as path from 'path';
 
 // VS Code依存を排除したテスト実装
@@ -43,7 +44,14 @@ describe('PathUtil (Windows File Path Handling)', () => {
 
             // 予約名チェック（拡張子を除いたベース名のみ）
             const baseName = sanitized.split('.')[0].trim();
-            if (reservedNames.includes(baseName.toUpperCase())) {
+            const baseNameUpper = baseName.toUpperCase();
+
+            // 完全一致またはハイフンで区切られた予約名をチェック
+            const isReservedName = reservedNames.some(reserved => {
+                return baseNameUpper === reserved || baseNameUpper.startsWith(reserved + '-');
+            });
+
+            if (isReservedName) {
                 sanitized = `_${sanitized.trim()}`;
             }
 
