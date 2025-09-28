@@ -155,7 +155,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "test:unit": "mocha --require ts-node/register --require tests/setup.ts --project tsconfig.test.json tests/unit/**/*.test.ts",
+    "test:unit": "cross-env TS_NODE_PROJECT=tsconfig.test.json mocha --require ts-node/register --require tests/setup.ts tests/unit/**/*.test.ts",
     "test:integration": "mocha --require ts-node/register tests/integration/**/*.test.ts",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -173,6 +173,7 @@
     "@vscode/vsce": "^2.22.0",
     "chai": "^6.0.1",
     "chai-as-promised": "^8.0.2",
+    "cross-env": "^10.0.0",
     "eslint": "^8.28.0",
     "glob": "^11.0.3",
     "mocha": "^9.2.1",
