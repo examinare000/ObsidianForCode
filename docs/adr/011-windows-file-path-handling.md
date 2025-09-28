@@ -1,7 +1,7 @@
 # ADR-011: Windows ファイルパス処理とコマンド登録改善
 
 ## ステータス
-採用 (Accepted)
+部分的に旧式化 (Partially Superseded by [ADR-013](./013-nodejs-path-isabsolute-adoption.md))
 
 ## 文脈
 Windows環境において、拡張機能のコマンド登録が失敗する問題が報告されている。調査の結果、以下の問題が特定された：
