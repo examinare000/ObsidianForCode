@@ -58,12 +58,16 @@ class MockTextDocument {
 }
 
 class MockUri {
-    constructor(public scheme: string, public path: string) {}
-    
+    public fsPath: string;
+
+    constructor(public scheme: string, public path: string) {
+        this.fsPath = path;
+    }
+
     static file(path: string): MockUri {
         return new MockUri('file', path);
     }
-    
+
     toString(): string {
         return `${this.scheme}:${this.path}`;
     }
