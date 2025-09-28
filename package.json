@@ -155,7 +155,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "test:unit": "mocha --require ts-node/register tests/unit/**/*.test.ts",
+    "test:unit": "mocha --require ts-node/register --require tests/setup.ts --project tsconfig.test.json tests/unit/**/*.test.ts",
     "test:integration": "mocha --require ts-node/register tests/integration/**/*.test.ts",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -163,6 +163,7 @@
   "devDependencies": {
     "@types/chai": "^5.2.2",
     "@types/chai-as-promised": "^8.0.2",
+    "@types/glob": "^8.1.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "16.x",
     "@types/vscode": "^1.103.0",
@@ -173,6 +174,7 @@
     "chai": "^6.0.1",
     "chai-as-promised": "^8.0.2",
     "eslint": "^8.28.0",
+    "glob": "^11.0.3",
     "mocha": "^9.2.1",
     "ts-node": "^10.9.0",
     "typescript": "^4.9.4"
