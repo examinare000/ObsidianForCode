@@ -60,7 +60,15 @@ export class DailyNoteManager {
 
         if (vaultRoot && vaultRoot.trim() !== '') {
             if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
-                return vscode.Uri.file(`${vaultRoot}/${dailyNotePath}/${fileName}`);
+                // 絶対パスの場合、ワークスペースのスキーム（file://、vscode-remote://など）を保持
+                // リモート環境でも正しく動作するように、ワークスペースURIのスキームを使用
+                const scheme = workspaceFolder.uri.scheme;
+                if (scheme === 'file') {
+                    return vscode.Uri.file(`${vaultRoot}/${dailyNotePath}/${fileName}`);
+                } else {
+                    // リモート環境の場合、URIのスキームと権限を保持
+                    return vscode.Uri.parse(`${scheme}://${workspaceFolder.uri.authority}${vaultRoot}/${dailyNotePath}/${fileName}`);
+                }
             } else {
                 return vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, dailyNotePath, fileName);
             }
@@ -91,7 +99,14 @@ export class DailyNoteManager {
 
             if (vaultRoot && vaultRoot.trim() !== '') {
                 if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
-                    templateUri = vscode.Uri.file(`${vaultRoot}/${templatePath}`);
+                    // 絶対パスの場合、ワークスペースのスキームを保持
+                    const scheme = workspaceFolder.uri.scheme;
+                    if (scheme === 'file') {
+                        templateUri = vscode.Uri.file(`${vaultRoot}/${templatePath}`);
+                    } else {
+                        // リモート環境の場合、URIのスキームと権限を保持
+                        templateUri = vscode.Uri.parse(`${scheme}://${workspaceFolder.uri.authority}${vaultRoot}/${templatePath}`);
+                    }
                 } else {
                     templateUri = vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, templatePath);
                 }
@@ -130,7 +145,10 @@ export class DailyNoteManager {
             const data = new TextEncoder().encode(templateContent);
 
             // ディレクトリが存在しない場合は作成
-            const dirUri = vscode.Uri.file(path.dirname(dailyNoteUri.fsPath));
+            // 元のURIのスキームを保持して親ディレクトリURIを作成
+            const uriPath = dailyNoteUri.path || dailyNoteUri.fsPath;
+            const dirPath = path.dirname(uriPath);
+            const dirUri = dailyNoteUri.with({ path: dirPath });
             await vscode.workspace.fs.createDirectory(dirUri);
 
             // ファイル作成

@@ -109,7 +109,8 @@ export class WikiLinkContextProvider {
 
             // カーソルがこのWikiLink内にあるかチェック
             // [[ の直後から ]] の直前まで（内側）にある場合のみtrue
-            if (offset >= linkStart + 2 && offset <= linkEnd - 3) {
+            // linkEnd - 2 は最後の閉じ括弧 ]] の位置なので、その直前までを含める
+            if (offset >= linkStart + 2 && offset <= linkEnd - 2) {
                 return true;
             }
         }

@@ -25,6 +25,9 @@ export interface ObsdConfiguration {
     readonly dateFormat: string;
     readonly timeFormat: string;
     readonly template: string;
+    readonly dailyNoteTemplate: string;
+    readonly dailyNotePath: string;
+    readonly dailyNoteEnabled: boolean;
 }
 
 /**
@@ -189,7 +192,10 @@ export class ConfigurationManager {
             slugStrategy: this.getSlugStrategy(),
             dateFormat: this.getDateFormat(),
             timeFormat: this.getTimeFormat(),
-            template: this.getTemplate()
+            template: this.getTemplate(),
+            dailyNoteTemplate: this.getDailyNoteTemplate(),
+            dailyNotePath: this.getDailyNotePath(),
+            dailyNoteEnabled: this.getDailyNoteEnabled()
         };
     }
 

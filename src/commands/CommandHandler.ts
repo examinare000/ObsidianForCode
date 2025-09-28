@@ -77,8 +77,11 @@ export class CommandHandler {
             const fileName = this.wikiLinkProcessor.transformFileName(parsedLink.pageName);
             const extension = this.configurationManager?.getNoteExtension() || '.md';
             const vaultRoot = this.configurationManager?.getVaultRoot() || '';
-            
-            const fullPath = `${vaultRoot}/${fileName}${extension}`;
+
+            // vaultRootが空の場合は相対パスとして扱い、先頭のスラッシュを付けない
+            const fullPath = vaultRoot
+                ? `${vaultRoot}/${fileName}${extension}`
+                : `${fileName}${extension}`;
             const filePath: Uri = {
                 path: fullPath,
                 fsPath: fullPath,
