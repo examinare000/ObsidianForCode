@@ -31,6 +31,28 @@ export class DailyNoteManager {
     ) {}
 
     /**
+     * Normalizes an absolute path for safe URI construction in remote environments.
+     * Converts Windows backslashes to forward slashes and ensures proper URI path format.
+     *
+     * @param absolutePath - The absolute path to normalize
+     * @returns Normalized path suitable for URI construction
+     */
+    private normalizeAbsolutePath(absolutePath: string): string {
+        // Convert Windows backslashes to forward slashes
+        let normalized = absolutePath.replace(/\\/g, '/');
+
+        // Ensure single leading slash for absolute paths
+        if (!normalized.startsWith('/')) {
+            normalized = '/' + normalized;
+        }
+
+        // Remove duplicate slashes
+        normalized = normalized.replace(/\/+/g, '/');
+
+        return normalized;
+    }
+
+    /**
      * Generates a daily note file name for the specified date.
      * Uses the configured date format and note extension.
      *
@@ -66,8 +88,10 @@ export class DailyNoteManager {
                 if (scheme === 'file') {
                     return vscode.Uri.file(`${vaultRoot}/${dailyNotePath}/${fileName}`);
                 } else {
-                    // リモート環境の場合、URIのスキームと権限を保持
-                    return vscode.Uri.parse(`${scheme}://${workspaceFolder.uri.authority}${vaultRoot}/${dailyNotePath}/${fileName}`);
+                    // リモート環境の場合、正規化されたパスでURIを構築
+                    const normalizedVaultRoot = this.normalizeAbsolutePath(vaultRoot);
+                    const fullPath = `${normalizedVaultRoot}/${dailyNotePath}/${fileName}`;
+                    return workspaceFolder.uri.with({ path: fullPath });
                 }
             } else {
                 return vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, dailyNotePath, fileName);
@@ -104,8 +128,10 @@ export class DailyNoteManager {
                     if (scheme === 'file') {
                         templateUri = vscode.Uri.file(`${vaultRoot}/${templatePath}`);
                     } else {
-                        // リモート環境の場合、URIのスキームと権限を保持
-                        templateUri = vscode.Uri.parse(`${scheme}://${workspaceFolder.uri.authority}${vaultRoot}/${templatePath}`);
+                        // リモート環境の場合、正規化されたパスでURIを構築
+                        const normalizedVaultRoot = this.normalizeAbsolutePath(vaultRoot);
+                        const fullPath = `${normalizedVaultRoot}/${templatePath}`;
+                        templateUri = workspaceFolder.uri.with({ path: fullPath });
                     }
                 } else {
                     templateUri = vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, templatePath);
