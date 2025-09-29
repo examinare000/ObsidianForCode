@@ -31,12 +31,7 @@
     "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
   },
   "activationEvents": [
-    "onLanguage:markdown",
-    "onCommand:obsd.openOrCreateWikiLink",
-    "onCommand:obsd.insertDate",
-    "onCommand:obsd.insertTime",
-    "onCommand:obsd.preview",
-    "onCommand:obsd.openDailyNote"
+    "onLanguage:markdown"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
@@ -178,10 +173,11 @@
     "glob": "^11.0.3",
     "mocha": "^9.2.1",
     "ts-node": "^10.9.0",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
     "@ig3/markdown-it-wikilinks": "^1.0.0",
-    "markdown-it": "^13.0.1"
+    "markdown-it": "^13.0.1",
+    "vsce": "^2.15.0"
   }
 }
