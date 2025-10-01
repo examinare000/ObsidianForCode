@@ -60,6 +60,11 @@
         "command": "obsd.openDailyNote",
         "title": "Obsidian for Code: Open Daily Note",
         "category": "Obsidian for Code"
+      },
+      {
+        "command": "obsd.handleEnterKey",
+        "title": "Obsidian for Code: Handle Enter Key",
+        "category": "Obsidian for Code"
       }
     ],
     "keybindings": [
@@ -78,6 +83,11 @@
         "command": "obsd.insertTime",
         "key": "alt+t",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "obsd.handleEnterKey",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
       }
     ],
     "configuration": {
@@ -132,6 +142,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable or disable DailyNote functionality"
+        },
+        "obsd.listContinuationEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
         },
         "obsd.dailyNoteKeybindingGuide": {
           "type": "string",
