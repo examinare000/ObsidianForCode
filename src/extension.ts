@@ -334,18 +334,23 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
             return;
         }
 
-        // First, try to find the note in subdirectories
-        const foundFile = await NoteFinder.findNoteByTitle(
-            fileName,
-            workspaceFolder,
-            vaultRoot,
-            extension
-        );
+        // Check if subdirectory search is enabled
+        const searchSubdirectories = configManager.getSearchSubdirectories();
 
-        if (foundFile) {
-            // If found, open the existing file
-            await vscode.window.showTextDocument(foundFile.uri);
-            return;
+        if (searchSubdirectories) {
+            // Try to find the note in subdirectories
+            const foundFile = await NoteFinder.findNoteByTitle(
+                fileName,
+                workspaceFolder,
+                vaultRoot,
+                extension
+            );
+
+            if (foundFile) {
+                // If found, open the existing file
+                await vscode.window.showTextDocument(foundFile.uri);
+                return;
+            }
         }
 
         // If not found, create a new file in the default location
