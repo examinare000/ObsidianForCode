@@ -31,7 +31,8 @@
     "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
   },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:obsd.handleEnterKey"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
@@ -60,6 +61,11 @@
         "command": "obsd.openDailyNote",
         "title": "Obsidian for Code: Open Daily Note",
         "category": "Obsidian for Code"
+      },
+      {
+        "command": "obsd.handleEnterKey",
+        "title": "Obsidian for Code: Handle Enter Key",
+        "category": "Obsidian for Code"
       }
     ],
     "keybindings": [
@@ -78,6 +84,11 @@
         "command": "obsd.insertTime",
         "key": "alt+t",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "obsd.handleEnterKey",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
       }
     ],
     "configuration": {
@@ -133,6 +144,16 @@
           "default": true,
           "description": "Enable or disable DailyNote functionality"
         },
+        "obsd.listContinuationEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
+        },
+        "obsd.searchSubdirectories": {
+          "type": "boolean",
+          "default": true,
+          "description": "Search subdirectories when opening WikiLinks. If disabled, only creates new files at the root level even when same-named files exist in subdirectories"
+        },
         "obsd.dailyNoteKeybindingGuide": {
           "type": "string",
           "default": "Follow the steps below",
@@ -161,6 +182,7 @@
     "@types/glob": "^8.1.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "16.x",
+    "@types/sinon": "^17.0.4",
     "@types/vscode": "^1.103.0",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
@@ -172,6 +194,7 @@
     "eslint": "^8.28.0",
     "glob": "^11.0.3",
     "mocha": "^9.2.1",
+    "sinon": "^21.0.0",
     "ts-node": "^10.9.0",
     "typescript": "^4.9.5"
   },
