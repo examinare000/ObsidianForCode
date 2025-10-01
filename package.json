@@ -149,6 +149,11 @@
           "default": true,
           "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
         },
+        "obsd.searchSubdirectories": {
+          "type": "boolean",
+          "default": true,
+          "description": "Search subdirectories when opening WikiLinks. If disabled, only creates new files at the root level even when same-named files exist in subdirectories"
+        },
         "obsd.dailyNoteKeybindingGuide": {
           "type": "string",
           "default": "Follow the steps below",

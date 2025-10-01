@@ -29,6 +29,7 @@ export interface ObsdConfiguration {
     readonly dailyNotePath: string;
     readonly dailyNoteEnabled: boolean;
     readonly listContinuationEnabled: boolean;
+    readonly searchSubdirectories: boolean;
 }
 
 /**
@@ -191,6 +192,15 @@ export class ConfigurationManager {
     }
 
     /**
+     * Checks if subdirectory search is enabled when opening WikiLinks.
+     *
+     * @returns True if subdirectory search is enabled (default: true)
+     */
+    getSearchSubdirectories(): boolean {
+        return this.config.get<boolean>('searchSubdirectories', true);
+    }
+
+    /**
      * Gets the complete configuration object.
      *
      * @returns Complete configuration with all current values
@@ -206,7 +216,8 @@ export class ConfigurationManager {
             dailyNoteTemplate: this.getDailyNoteTemplate(),
             dailyNotePath: this.getDailyNotePath(),
             dailyNoteEnabled: this.getDailyNoteEnabled(),
-            listContinuationEnabled: this.getListContinuationEnabled()
+            listContinuationEnabled: this.getListContinuationEnabled(),
+            searchSubdirectories: this.getSearchSubdirectories()
         };
     }
 
