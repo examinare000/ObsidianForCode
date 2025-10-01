@@ -28,6 +28,7 @@ export interface ObsdConfiguration {
     readonly dailyNoteTemplate: string;
     readonly dailyNotePath: string;
     readonly dailyNoteEnabled: boolean;
+    readonly listContinuationEnabled: boolean;
 }
 
 /**
@@ -181,6 +182,15 @@ export class ConfigurationManager {
     }
 
     /**
+     * Checks if list continuation functionality is enabled.
+     *
+     * @returns True if list continuation is enabled (default: true)
+     */
+    getListContinuationEnabled(): boolean {
+        return this.config.get<boolean>('listContinuationEnabled', true);
+    }
+
+    /**
      * Gets the complete configuration object.
      *
      * @returns Complete configuration with all current values
@@ -195,7 +205,8 @@ export class ConfigurationManager {
             template: this.getTemplate(),
             dailyNoteTemplate: this.getDailyNoteTemplate(),
             dailyNotePath: this.getDailyNotePath(),
-            dailyNoteEnabled: this.getDailyNoteEnabled()
+            dailyNoteEnabled: this.getDailyNoteEnabled(),
+            listContinuationEnabled: this.getListContinuationEnabled()
         };
     }
 
