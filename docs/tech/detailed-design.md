@@ -1635,8 +1635,631 @@ function validatePackageJsonConsistency() {
 - 設定管理プロセスの改善
 - ドキュメント化による再発防止
 
+## 17. Enhanced Note Features設計 (v0.4.5)
+
+### 17.1 機能概要
+サブディレクトリからのノート検索、WikiLink自動補完、リスト自動継続機能を提供し、Obsidianライクなノート作成体験をVS Codeで実現する。
+
+### 17.2 NoteFinder ユーティリティ設計
+
+#### 17.2.1 統一されたAPI設計
+全ての検索メソッドが一貫した戻り値型を返すよう設計：
+
+```typescript
+// src/utils/NoteFinder.ts
+export interface NoteInfo {
+    title: string;
+    uri: vscode.Uri;
+    relativePath: string;
+}
+
+export class NoteFinder {
+    /**
+     * タイトルによる完全一致検索（サブディレクトリ対応）
+     */
+    static async findNoteByTitle(
+        title: string,
+        workspaceFolder: vscode.WorkspaceFolder,
+        vaultRoot?: string,
+        extension: string = '.md'
+    ): Promise<NoteInfo | null> {
+        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+            ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
+            : workspaceFolder.uri.fsPath;
+
+        const pattern = new vscode.RelativePattern(
+            searchBase,
+            `**/${title}${extension}`
+        );
+
+        try {
+            const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
+
+            if (files.length > 0) {
+                // ルートレベル優先でソート
+                const sortedFiles = files.sort((a, b) => {
+                    const aDepth = a.fsPath.split(path.sep).length;
+                    const bDepth = b.fsPath.split(path.sep).length;
+                    return aDepth - bDepth;
+                });
+
+                const file = sortedFiles[0];
+                const relativePath = path.relative(searchBase, file.fsPath);
+                return {
+                    title: path.basename(file.fsPath, extension),
+                    uri: file,
+                    relativePath: relativePath
+                };
+            }
+        } catch (error) {
+            console.error('Error finding note:', error);
+        }
+
+        return null;
+    }
+
+    /**
+     * プレフィックスによる前方一致検索
+     * 完全一致を優先し、パス深度でソート
+     */
+    static async findNotesByPrefix(
+        prefix: string,
+        workspaceFolder: vscode.WorkspaceFolder,
+        vaultRoot?: string,
+        extension: string = '.md',
+        maxResults: number = 50
+    ): Promise<NoteInfo[]> {
+        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+            ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
+            : workspaceFolder.uri.fsPath;
+
+        const pattern = new vscode.RelativePattern(
+            searchBase,
+            `**/*${extension}`
+        );
+
+        try {
+            const files = await vscode.workspace.findFiles(
+                pattern,
+                '**/node_modules/**',
+                maxResults * 2
+            );
+
+            const results: NoteInfo[] = [];
+
+            for (const file of files) {
+                const fileName = path.basename(file.fsPath, extension);
+
+                if (fileName.toLowerCase().startsWith(prefix.toLowerCase())) {
+                    const relativePath = path.relative(searchBase, file.fsPath);
+                    results.push({
+                        title: fileName,
+                        uri: file,
+                        relativePath: relativePath
+                    });
+                }
+            }
+
+            // ソート戦略: 完全一致 > パス深度 > アルファベット順
+            results.sort((a, b) => {
+                const aExact = a.title.toLowerCase() === prefix.toLowerCase();
+                const bExact = b.title.toLowerCase() === prefix.toLowerCase();
+
+                if (aExact && !bExact) {
+                    return -1;
+                }
+                if (!aExact && bExact) {
+                    return 1;
+                }
+
+                const aDepth = a.relativePath.split(path.sep).length;
+                const bDepth = b.relativePath.split(path.sep).length;
+
+                if (aDepth !== bDepth) {
+                    return aDepth - bDepth;
+                }
+
+                return a.title.localeCompare(b.title);
+            });
+
+            return results.slice(0, maxResults);
+        } catch (error) {
+            console.error('Error finding notes by prefix:', error);
+            return [];
+        }
+    }
+
+    /**
+     * 全ノート取得（インデックス用）
+     */
+    static async getAllNotes(
+        workspaceFolder: vscode.WorkspaceFolder,
+        vaultRoot?: string,
+        extension: string = '.md'
+    ): Promise<NoteInfo[]> {
+        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+            ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
+            : workspaceFolder.uri.fsPath;
+
+        const pattern = new vscode.RelativePattern(
+            searchBase,
+            `**/*${extension}`
+        );
+
+        try {
+            const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
+            return files.map(file => {
+                const fileName = path.basename(file.fsPath, extension);
+                const relativePath = path.relative(searchBase, file.fsPath);
+                return {
+                    title: fileName,
+                    uri: file,
+                    relativePath: relativePath
+                };
+            });
+        } catch (error) {
+            console.error('Error getting all notes:', error);
+            return [];
+        }
+    }
+}
+```
+
+### 17.3 WikiLinkCompletionProvider設計
+
+#### 17.3.1 自動補完プロバイダー実装
+```typescript
+// src/providers/WikiLinkCompletionProvider.ts
+export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider {
+    constructor(private configManager: ConfigurationManager) {}
+
+    async provideCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        token: vscode.CancellationToken,
+        context: vscode.CompletionContext
+    ): Promise<vscode.CompletionItem[] | null> {
+        const line = document.lineAt(position.line);
+        const textBeforeCursor = line.text.substring(0, position.character);
+
+        // WikiLink内部検出
+        const lastOpenBrackets = textBeforeCursor.lastIndexOf('[[');
+        const lastCloseBrackets = textBeforeCursor.lastIndexOf(']]');
+
+        if (lastOpenBrackets === -1 || lastCloseBrackets > lastOpenBrackets) {
+            return null;
+        }
+
+        // プレフィックス抽出
+        const prefix = textBeforeCursor.substring(lastOpenBrackets + 2);
+
+        // マルチルートワークスペース対応
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+        if (!workspaceFolder) {
+            return null;
+        }
+
+        // ノート候補取得
+        const vaultRoot = this.configManager.getVaultRoot();
+        const extension = this.configManager.getNoteExtension();
+
+        const notes = await NoteFinder.findNotesByPrefix(
+            prefix,
+            workspaceFolder,
+            vaultRoot,
+            extension,
+            50
+        );
+
+        // CompletionItem変換
+        return notes.map((note, index) => {
+            const item = new vscode.CompletionItem(
+                note.title,
+                vscode.CompletionItemKind.File
+            );
+
+            item.insertText = note.title;
+            item.detail = note.relativePath;
+            item.sortText = String(index).padStart(3, '0');
+            item.documentation = new vscode.MarkdownString(
+                `**${note.title}**\n\n📁 ${note.relativePath}`
+            );
+
+            // 閉じ括弧の自動調整
+            const afterCursor = line.text.substring(position.character);
+            if (afterCursor.startsWith(']]')) {
+                item.range = new vscode.Range(
+                    position.line,
+                    lastOpenBrackets + 2,
+                    position.line,
+                    position.character
+                );
+            }
+
+            return item;
+        });
+    }
+
+    resolveCompletionItem(
+        item: vscode.CompletionItem,
+        token: vscode.CancellationToken
+    ): vscode.CompletionItem {
+        return item;
+    }
+}
+```
+
+### 17.4 ListContinuationProvider設計
+
+#### 17.4.1 リスト自動継続プロバイダー
+```typescript
+// src/providers/ListContinuationProvider.ts
+export class ListContinuationProvider {
+    private listPatterns = {
+        unordered: /^(\s*)([-*+])\s+(.*)$/,
+        ordered: /^(\s*)(\d+)\.\s+(.*)$/,
+        checkbox: /^(\s*)([-*+])\s+\[([ x])\]\s+(.*)$/
+    };
+
+    constructor(private configManager: ConfigurationManager) {}
+
+    async handleEnterKey(editor: vscode.TextEditor): Promise<boolean> {
+        if (!this.configManager.getListContinuationEnabled()) {
+            return false;
+        }
+
+        const position = editor.selection.active;
+        const line = editor.document.lineAt(position.line);
+
+        // リストパターン検出
+        const { patternType, matchedPattern } = this.detectListPattern(line.text);
+        if (!patternType || !matchedPattern) {
+            return false;
+        }
+
+        const indent = matchedPattern[1];
+        const contentAfterMarker = this.getContentAfterMarker(patternType, matchedPattern);
+
+        // 空リストアイテムの削除
+        if (!contentAfterMarker || contentAfterMarker.trim() === '') {
+            const edit = new vscode.WorkspaceEdit();
+            const lineRange = new vscode.Range(
+                position.line,
+                0,
+                position.line,
+                line.text.length
+            );
+            edit.replace(editor.document.uri, lineRange, '');
+
+            await vscode.workspace.applyEdit(edit);
+
+            const newPosition = new vscode.Position(position.line, 0);
+            editor.selection = new vscode.Selection(newPosition, newPosition);
+
+            return false; // VS Codeの通常動作に任せる
+        }
+
+        // 新しいリストアイテムの生成
+        let newLineContent = '';
+
+        switch (patternType) {
+            case 'checkbox': {
+                const marker = matchedPattern[2];
+                newLineContent = `${indent}${marker} [ ] `;
+                break;
+            }
+
+            case 'unordered': {
+                const listMarker = matchedPattern[2];
+                newLineContent = `${indent}${listMarker} `;
+                break;
+            }
+
+            case 'ordered': {
+                const number = parseInt(matchedPattern[2], 10);
+                newLineContent = `${indent}${number + 1}. `;
+                break;
+            }
+        }
+
+        // 新しい行を挿入
+        await editor.edit(editBuilder => {
+            editBuilder.insert(
+                new vscode.Position(position.line + 1, 0),
+                '\n' + newLineContent
+            );
+        });
+
+        // カーソルを新しい行に移動
+        const newPosition = new vscode.Position(
+            position.line + 1,
+            newLineContent.length
+        );
+        editor.selection = new vscode.Selection(newPosition, newPosition);
+
+        return true;
+    }
+
+    private detectListPattern(text: string): {
+        patternType: 'checkbox' | 'unordered' | 'ordered' | null;
+        matchedPattern: RegExpMatchArray | null;
+    } {
+        let match = text.match(this.listPatterns.checkbox);
+        if (match) {
+            return { patternType: 'checkbox', matchedPattern: match };
+        }
+
+        match = text.match(this.listPatterns.unordered);
+        if (match) {
+            return { patternType: 'unordered', matchedPattern: match };
+        }
+
+        match = text.match(this.listPatterns.ordered);
+        if (match) {
+            return { patternType: 'ordered', matchedPattern: match };
+        }
+
+        return { patternType: null, matchedPattern: null };
+    }
+
+    private getContentAfterMarker(
+        patternType: 'checkbox' | 'unordered' | 'ordered',
+        match: RegExpMatchArray
+    ): string {
+        switch (patternType) {
+            case 'checkbox':
+                return match[4];
+            case 'unordered':
+                return match[3];
+            case 'ordered':
+                return match[3];
+        }
+    }
+}
+```
+
+### 17.5 設定項目の追加
+
+#### 17.5.1 新規設定
+```json
+{
+  "obsd.listContinuationEnabled": {
+    "type": "boolean",
+    "default": true,
+    "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
+  },
+  "obsd.searchSubdirectories": {
+    "type": "boolean",
+    "default": true,
+    "description": "Search subdirectories when opening WikiLinks. If disabled, only creates new files at the root level even when same-named files exist in subdirectories"
+  }
+}
+```
+
+#### 17.5.2 ConfigurationManager拡張
+```typescript
+// src/managers/ConfigurationManager.ts に追加
+export interface ObsdConfiguration {
+    // 既存フィールド...
+    readonly listContinuationEnabled: boolean;
+    readonly searchSubdirectories: boolean;
+}
+
+export class ConfigurationManager {
+    getListContinuationEnabled(): boolean {
+        return this.config.get<boolean>('listContinuationEnabled', true);
+    }
+
+    getSearchSubdirectories(): boolean {
+        return this.config.get<boolean>('searchSubdirectories', true);
+    }
+
+    getConfiguration(): ObsdConfiguration {
+        return {
+            // 既存フィールド...
+            listContinuationEnabled: this.getListContinuationEnabled(),
+            searchSubdirectories: this.getSearchSubdirectories()
+        };
+    }
+}
+```
+
+### 17.6 テスト設計の改善
+
+#### 17.6.1 モックドキュメントヘルパー
+```typescript
+// tests/helpers/mockDocument.ts
+export function createMockDocument(lines: string[]): vscode.TextDocument {
+    const offsetAt = (position: vscode.Position): number => {
+        let offset = 0;
+        for (let i = 0; i < position.line && i < lines.length; i++) {
+            offset += lines[i].length + 1;
+        }
+        offset += Math.min(position.character, lines[position.line]?.length || 0);
+        return offset;
+    };
+
+    const positionAt = (offset: number): vscode.Position => {
+        let currentOffset = 0;
+        for (let line = 0; line < lines.length; line++) {
+            const lineLength = lines[line].length;
+            if (currentOffset + lineLength >= offset) {
+                return new vscode.Position(line, offset - currentOffset);
+            }
+            currentOffset += lineLength + 1;
+        }
+        const lastLine = lines.length - 1;
+        return new vscode.Position(lastLine, lines[lastLine]?.length || 0);
+    };
+
+    return {
+        uri: vscode.Uri.file('/test/document.md'),
+        fileName: '/test/document.md',
+        languageId: 'markdown',
+        version: 1,
+        lineCount: lines.length,
+        lineAt: (lineOrPosition) => {
+            const lineNum = typeof lineOrPosition === 'number'
+                ? lineOrPosition
+                : lineOrPosition.line;
+            const text = lines[lineNum] || '';
+            return {
+                lineNumber: lineNum,
+                text: text,
+                range: new vscode.Range(lineNum, 0, lineNum, text.length),
+                rangeIncludingLineBreak: new vscode.Range(lineNum, 0, lineNum + 1, 0),
+                firstNonWhitespaceCharacterIndex: text.search(/\S/),
+                isEmptyOrWhitespace: text.trim().length === 0
+            } as vscode.TextLine;
+        },
+        getText: () => lines.join('\n'),
+        offsetAt: offsetAt,
+        positionAt: positionAt,
+        // その他のメソッド...
+    } as unknown as vscode.TextDocument;
+}
+```
+
+#### 17.6.2 エラーハンドリングテスト
+```typescript
+// tests/unit/NoteFinder.test.ts
+describe('NoteFinder Error Handling', () => {
+    it('should handle findFiles errors gracefully', async () => {
+        sinon.stub(vscode.workspace, 'findFiles').rejects(new Error('File system error'));
+
+        const result = await NoteFinder.findNoteByTitle('Test', workspace, 'notes', '.md');
+
+        expect(result).to.be.null;
+    });
+
+    it('should handle special characters in filenames', async () => {
+        const mockFiles = [
+            vscode.Uri.file('/test/Note (with) [brackets].md'),
+            vscode.Uri.file('/test/日本語ノート.md')
+        ];
+
+        sinon.stub(vscode.workspace, 'findFiles').resolves(mockFiles);
+
+        const result = await NoteFinder.getAllNotes(workspace, 'notes', '.md');
+
+        expect(result).to.have.lengthOf(2);
+        expect(result[0].title).to.include('Note');
+        expect(result[1].title).to.equal('日本語ノート');
+    });
+});
+```
+
+### 17.7 パフォーマンス最適化
+
+#### 17.7.1 最適化戦略
+- **早期終了の削除**: 全候補を収集後にソート、上位結果のみ返却
+- **キャッシング**: 将来的な実装検討（LRUキャッシュ）
+- **バッチ処理**: `findFiles` のmaxResults活用
+
+#### 17.7.2 監視指標
+- ノート検索時間 < 200ms (1000ファイル環境)
+- 補完候補表示 < 100ms
+- メモリ使用量 < 10MB増加
+
+### 17.8 統合とactivation
+
+#### 17.8.1 extension.tsでの統合
+```typescript
+// src/extension.ts
+export function activate(context: vscode.ExtensionContext) {
+    const configManager = new ConfigurationManager();
+
+    // WikiLink自動補完
+    const completionProvider = new WikiLinkCompletionProvider(configManager);
+    context.subscriptions.push(
+        vscode.languages.registerCompletionItemProvider(
+            { scheme: 'file', language: 'markdown' },
+            completionProvider,
+            '[', '['
+        )
+    );
+
+    // リスト自動継続
+    const listProvider = new ListContinuationProvider(configManager);
+    context.subscriptions.push(
+        vscode.commands.registerCommand('obsd.handleEnterKey', async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                const handled = await listProvider.handleEnterKey(editor);
+                if (!handled) {
+                    vscode.commands.executeCommand('default:type', { text: '\n' });
+                }
+            }
+        })
+    );
+
+    // 条件付きサブディレクトリ検索
+    const openOrCreateCommand = vscode.commands.registerCommand(
+        'obsd.openOrCreateWikiLink',
+        async () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) return;
+
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder found.');
+                return;
+            }
+
+            const linkText = getWikiLinkAtPosition(editor.document, editor.selection.active);
+            if (!linkText) {
+                vscode.window.showInformationMessage('No WikiLink found at cursor.');
+                return;
+            }
+
+            const searchSubdirectories = configManager.getSearchSubdirectories();
+
+            if (searchSubdirectories) {
+                const foundFile = await NoteFinder.findNoteByTitle(
+                    linkText,
+                    workspaceFolder,
+                    configManager.getVaultRoot(),
+                    configManager.getNoteExtension()
+                );
+
+                if (foundFile) {
+                    await vscode.window.showTextDocument(foundFile.uri);
+                    return;
+                }
+            }
+
+            // 新規ファイル作成処理...
+        }
+    );
+
+    context.subscriptions.push(openOrCreateCommand);
+}
+```
+
+#### 17.8.2 activationEvents更新
+```json
+{
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onCommand:obsd.handleEnterKey"
+  ]
+}
+```
+
+### 17.9 影響と効果
+
+#### 17.9.1 機能向上
+- **検索精度**: 完全一致優先により期待通りの結果
+- **ユーザビリティ**: 自動補完とリスト継続でノート作成が効率化
+- **柔軟性**: サブディレクトリ検索の有効/無効を選択可能
+
+#### 17.9.2 品質向上
+- **テストカバレッジ**: 46テストケース（エラーハンドリング、エッジケース含む）
+- **API一貫性**: 全検索メソッドが同じ型を返却
+- **保守性**: 統一されたモックヘルパーで将来的なテスト追加が容易
+
 ---
 
-**文書バージョン**: 1.5
-**最終更新**: 2025-09-22
-**更新内容**: Extension Activation Fix設計を追加
+**文書バージョン**: 1.6
+**最終更新**: 2025-10-01
+**更新内容**: Enhanced Note Features設計を追加
