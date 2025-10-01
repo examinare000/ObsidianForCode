@@ -13,8 +13,11 @@ import { WikiLinkProcessor } from './processors/WikiLinkProcessor';
 import { DateTimeFormatter } from './utils/DateTimeFormatter';
 import { ConfigurationManager } from './managers/ConfigurationManager';
 import { WikiLinkContextProvider } from './providers/WikiLinkContextProvider';
+import { WikiLinkCompletionProvider } from './providers/WikiLinkCompletionProvider';
+import { ListContinuationProvider } from './providers/ListContinuationProvider';
 import { DailyNoteManager } from './managers/DailyNoteManager';
 import { PathUtil } from './utils/PathUtil';
+import { NoteFinder } from './utils/NoteFinder';
 
 /**
  * Activates the Obsidian for Code extension.
@@ -75,6 +78,29 @@ export function activate(context: vscode.ExtensionContext) {
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register WikiLinkDocumentLinkProvider');
         return;
+    }
+
+    // WikiLink CompletionProvider登録
+    let completionProviderDisposable: vscode.Disposable;
+    try {
+        const wikiLinkCompletionProvider = new WikiLinkCompletionProvider(configManager);
+        completionProviderDisposable = vscode.languages.registerCompletionItemProvider(
+            { scheme: 'file', language: 'markdown' },
+            wikiLinkCompletionProvider,
+            '[' // Trigger character
+        );
+    } catch (error) {
+        vscode.window.showErrorMessage('Failed to register WikiLinkCompletionProvider');
+        return;
+    }
+
+    // List ContinuationProvider登録
+    let listContinuationDisposable: vscode.Disposable | undefined;
+    try {
+        const listContinuationProvider = new ListContinuationProvider(configManager);
+        listContinuationDisposable = listContinuationProvider.register(context);
+    } catch (error) {
+        errors.push(`Failed to register ListContinuationProvider: ${error}`);
     }
 
     // Commands登録（個別エラーハンドリング）
@@ -152,10 +178,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Context subscriptions
     try {
-        context.subscriptions.push(
+        const subscriptions = [
             linkProviderDisposable,
+            completionProviderDisposable,
             ...commands
-        );
+        ];
+
+        if (listContinuationDisposable) {
+            subscriptions.push(listContinuationDisposable);
+        }
+
+        context.subscriptions.push(...subscriptions);
     } catch (error) {
         vscode.window.showErrorMessage('Failed to add subscriptions');
         return;
@@ -275,25 +308,25 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
 
     const position = editor.selection.active;
     const linkText = getWikiLinkAtPosition(editor.document, position);
-    
+
     if (!linkText) {
         vscode.window.showInformationMessage('No WikiLink found at cursor position');
         return;
     }
-    
+
     try {
-        const wikiLinkProcessor = new WikiLinkProcessor({ 
-            slugStrategy: configManager.getSlugStrategy() 
+        const wikiLinkProcessor = new WikiLinkProcessor({
+            slugStrategy: configManager.getSlugStrategy()
         });
         const parsedLink = wikiLinkProcessor.parseWikiLink(linkText);
         let fileName = wikiLinkProcessor.transformFileName(parsedLink.pageName);
-        
+
         // ファイルシステム安全な名前に正規化
         fileName = PathUtil.sanitizeFileName(fileName);
-        
+
         const extension = configManager.getNoteExtension();
         const vaultRoot = configManager.getVaultRoot();
-        
+
         // ワークスペースフォルダーの確認
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
@@ -301,6 +334,21 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
             return;
         }
 
+        // First, try to find the note in subdirectories
+        const foundFile = await NoteFinder.findNoteByTitle(
+            fileName,
+            workspaceFolder,
+            vaultRoot,
+            extension
+        );
+
+        if (foundFile) {
+            // If found, open the existing file
+            await vscode.window.showTextDocument(foundFile);
+            return;
+        }
+
+        // If not found, create a new file in the default location
         // PathUtilを使用した安全なURI作成
         const uri = PathUtil.createSafeUri(
             vaultRoot,
@@ -309,7 +357,6 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
             workspaceFolder
         );
 
-        
         // ファイル存在チェックと作成処理
         try {
             await vscode.workspace.fs.stat(uri);
