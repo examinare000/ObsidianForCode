@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 
 // DailyNoteManagerが存在しないため失敗するテスト
+// Note: DailyNoteManager has been implemented, so these TDD Red Phase tests are skipped
 describe('DailyNoteManager (TDD Red Phase)', () => {
-    it('should fail - class does not exist yet', () => {
+    it.skip('should fail - class does not exist yet', () => {
+        // Skip: DailyNoteManager has been implemented
         try {
             // この時点ではDailyNoteManagerは存在しないはず
             const { DailyNoteManager } = require('../../../src/managers/DailyNoteManager');

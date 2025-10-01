@@ -120,6 +120,24 @@ const vscode = {
     },
     Selection: class Selection {
         constructor(public anchor: any, public active: any) {}
+        get isEmpty(): boolean {
+            return this.anchor.line === this.active.line &&
+                   this.anchor.character === this.active.character;
+        }
+        get start(): any {
+            if (this.anchor.line < this.active.line ||
+                (this.anchor.line === this.active.line && this.anchor.character < this.active.character)) {
+                return this.anchor;
+            }
+            return this.active;
+        }
+        get end(): any {
+            if (this.anchor.line > this.active.line ||
+                (this.anchor.line === this.active.line && this.anchor.character > this.active.character)) {
+                return this.anchor;
+            }
+            return this.active;
+        }
     },
     CancellationTokenSource: class CancellationTokenSource {
         token = { isCancellationRequested: false, onCancellationRequested: () => ({ dispose: () => {} }) };

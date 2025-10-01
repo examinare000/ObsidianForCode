@@ -41,9 +41,20 @@ describe('PathUtil (Windows File Path Handling)', () => {
                 return 'untitled';
             }
 
-            // 予約名チェック（拡張子を除いたベース名のみ）
+            // 予約名チェック（拡張子を除いたベース名、またはそれで始まる場合）
             const baseName = sanitized.split('.')[0].trim();
-            if (reservedNames.includes(baseName.toUpperCase())) {
+            const baseNameUpper = baseName.toUpperCase();
+            // 予約名と完全一致、または予約名で始まり直後が非英数字の場合
+            const isReserved = reservedNames.some(reserved => {
+                if (baseNameUpper === reserved) return true;
+                if (baseNameUpper.startsWith(reserved)) {
+                    const nextChar = baseName.charAt(reserved.length);
+                    // 予約名の後に英数字以外が続く場合（例: CON-file, CON:file）
+                    return nextChar && !/[a-zA-Z0-9]/.test(nextChar);
+                }
+                return false;
+            });
+            if (isReserved) {
                 sanitized = `_${sanitized.trim()}`;
             }
 

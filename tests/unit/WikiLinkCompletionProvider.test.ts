@@ -230,7 +230,9 @@ describe('WikiLinkCompletionProvider', () => {
             // Check that range is set correctly when ]] exists
             expect(result![0].range).to.not.be.undefined;
             const range = result![0].range as vscode.Range;
+            expect(range.start.line).to.equal(0);
             expect(range.start.character).to.equal(7); // After [[
+            expect(range.end.line).to.equal(0);
             expect(range.end.character).to.equal(10); // Before ]]
         });
 

@@ -51,35 +51,25 @@ export class ListContinuationProvider {
         const position = selection.active;
         const line = document.lineAt(position.line);
         const lineText = line.text;
-        const textBeforeCursor = lineText.substring(0, position.character);
 
-        // Detect list patterns
-        const listPatterns = [
-            // Unordered lists with -, *, +
-            /^(\s*)([-*+])\s+(.*)$/,
-            // Ordered lists with numbers
-            /^(\s*)(\d+)\.\s+(.*)$/,
-            // Checkboxes
-            /^(\s*)([-*+])\s+\[([ x])\]\s+(.*)$/,
-        ];
-
+        // Detect list patterns using the full line text
         let matchedPattern: RegExpExecArray | null = null;
         let patternType: 'unordered' | 'ordered' | 'checkbox' | null = null;
 
         // Check checkbox pattern first (more specific)
-        const checkboxMatch = /^(\s*)([-*+])\s+\[([ x])\]\s+(.*)$/.exec(textBeforeCursor);
+        const checkboxMatch = /^(\s*)([-*+])\s+\[([ x])\]\s+(.*)$/.exec(lineText);
         if (checkboxMatch) {
             matchedPattern = checkboxMatch;
             patternType = 'checkbox';
         } else {
             // Check unordered list
-            const unorderedMatch = /^(\s*)([-*+])\s+(.*)$/.exec(textBeforeCursor);
+            const unorderedMatch = /^(\s*)([-*+])\s+(.*)$/.exec(lineText);
             if (unorderedMatch) {
                 matchedPattern = unorderedMatch;
                 patternType = 'unordered';
             } else {
                 // Check ordered list
-                const orderedMatch = /^(\s*)(\d+)\.\s+(.*)$/.exec(textBeforeCursor);
+                const orderedMatch = /^(\s*)(\d+)\.\s+(.*)$/.exec(lineText);
                 if (orderedMatch) {
                     matchedPattern = orderedMatch;
                     patternType = 'ordered';

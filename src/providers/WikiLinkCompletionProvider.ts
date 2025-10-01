@@ -113,10 +113,8 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             if (textAfterCursor.startsWith(']]')) {
                 // If ]] already exists, just replace the text inside
                 item.range = new vscode.Range(
-                    position.line,
-                    lastOpenBrackets + 2,
-                    position.line,
-                    position.character
+                    new vscode.Position(position.line, lastOpenBrackets + 2),
+                    new vscode.Position(position.line, position.character)
                 );
             }
 
