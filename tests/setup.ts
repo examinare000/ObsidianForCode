@@ -22,11 +22,17 @@ const vscode = {
                     searchSubdirectories: true
                 }
             };
+
+            // If a section is specified, scope to that section
+            let scopedData = configData;
+            if (section) {
+                scopedData = configData[section] || {};
+            }
+
             return {
                 get: (key: string, defaultValue?: any) => {
-                    const fullKey = section ? `${section}.${key}` : key;
-                    const keys = fullKey.split('.');
-                    let value = configData;
+                    const keys = key.split('.');
+                    let value = scopedData;
                     for (const k of keys) {
                         if (value && typeof value === 'object' && k in value) {
                             value = value[k];
@@ -36,7 +42,18 @@ const vscode = {
                     }
                     return value !== undefined ? value : defaultValue;
                 },
-                has: (key: string) => true,
+                has: (key: string) => {
+                    const keys = key.split('.');
+                    let value = scopedData;
+                    for (const k of keys) {
+                        if (value && typeof value === 'object' && k in value) {
+                            value = value[k];
+                        } else {
+                            return false;
+                        }
+                    }
+                    return true;
+                },
                 update: () => Promise.resolve()
             };
         },
