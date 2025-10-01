@@ -16,6 +16,11 @@
 | [008](./008-dailynote-feature-design.md) | DailyNote Feature Design | Accepted | 2025-09-18 | 日次ノート自動作成機能の設計とTDD実装 |
 | [009](./009-configurable-dailynote-features.md) | Configurable DailyNote Features | Accepted | 2025-09-18 | DailyNote機能の設定可能化と条件付き機能登録 |
 | [010](./010-settings-ui-improvement.md) | Settings UI Improvement | Accepted | 2025-09-18 | キーバインド設定UIの表示専用化による混乱解消 |
+| [011](./011-windows-file-path-handling.md) | Windows File Path Handling | Accepted | 2025-09-22 | Windowsファイルシステム対応とパスサニタイズ |
+| [012](./012-extension-activation-fix.md) | Extension Activation Fix | Accepted | 2025-09-22 | activationEvents設定の整合性確保 |
+| [013](./013-nodejs-path-isabsolute-adoption.md) | Node.js path.isAbsolute Adoption | Accepted | 2025-09-22 | クロスプラットフォーム対応の絶対パス判定 |
+| [014](./014-enhanced-note-features-quality-improvements.md) | Enhanced Note Features Quality Improvements | Accepted | 2025-09-22 | WikiLink補完・リスト継続機能の品質向上 |
+| [015](./ADR-015-test-quality-improvements.md) | Test Quality Improvements | Accepted | 2025-10-01 | テスト成功率95.6%達成とグローバルモック統合 |
 
 ## ADR作成ガイドライン
 

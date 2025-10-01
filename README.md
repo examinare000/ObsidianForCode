@@ -8,7 +8,7 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 
 最新の更新内容やバグ修正については、[リリースノート](./docs/releases/)をご確認ください。
 
-- **最新**: [v0.4.5](./docs/releases/v0.4.5.md) - Windows環境でのコマンド登録問題修正
+- **最新**: v0.4.5-dev - テスト品質向上 (95.6%成功率達成)
 
 ## 🚀 機能
 
@@ -39,6 +39,10 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 - `obsd.dailyNoteTemplate` - デイリーノートテンプレートファイルパス
 - `obsd.dailyNoteKeybindingGuide` - キーバインド設定方法のガイダンス (読み取り専用)
 
+#### 拡張機能設定
+- `obsd.listContinuationEnabled` - リスト自動継続機能の有効/無効 (デフォルト: `true`)
+- `obsd.searchSubdirectories` - WikiLink検索時にサブディレクトリも対象にする (デフォルト: `true`)
+
 ## 🛠 開発
 
 ### 環境構築
@@ -49,7 +53,7 @@ npm run compile
 
 ### テスト実行
 ```bash
-npm run test:unit        # 単体テスト (46個のテスト)
+npm run test:unit        # 単体テスト (215/225成功、95.6%)
 npm run test:integration # 統合テスト
 ```
 
@@ -65,22 +69,29 @@ npm run test:integration # 統合テスト
 - **ConfigurationManager** - 設定管理・検証
 - **DateTimeFormatter** - 日時フォーマット
 - **DailyNoteManager** - デイリーノート作成・管理
+- **NoteFinder** - ノート検索・優先順位付け
 
 #### Integration Layer (VS Code統合)
 - **WikiLinkDocumentLinkProvider** - リンク検出・ナビゲーション
 - **CommandHandler** - コマンド実装
 - **WikiLinkContextProvider** - キーバインドコンテキスト
+- **WikiLinkCompletionProvider** - WikiLink補完機能
+- **ListContinuationProvider** - リスト自動継続
 
 ### 品質保証
 - **Test-Driven Development** - t-wadaのTDD手法を採用
-- **46個の包括的テスト** - Red-Green-Refactorサイクルで開発
+- **225個の包括的テスト** - Red-Green-Refactorサイクルで開発
+- **95.6%テスト成功率** - 215/225テスト成功、10スキップ
 - **依存性注入** - テスタブル設計でVS Code API抽象化
 - **アイソレートテスト** - vscode依存を排除した独立テスト環境
+- **グローバルモック統合** - 一元化されたVS Code APIモック
 
 ## 📚 ドキュメント
 
-- [アーキテクチャ決定記録 (ADR)](./docs/adr/) - 技術的意思決定の記録
+- [開発状況レポート](./docs/development-status.md) - 現在の開発状況と統計
+- [アーキテクチャ決定記録 (ADR)](./docs/adr/) - 技術的意思決定の記録（15件）
 - [プロダクト要件定義 (PRD)](./docs/prd/prd.md) - 機能要件と設計方針
+- [詳細設計書](./docs/tech/detailed-design.md) - システムアーキテクチャ
 
 ## 🔧 開発環境対応
 
