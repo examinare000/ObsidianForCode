@@ -23,7 +23,7 @@ export class CommandHandler {
     private wikiLinkProcessor: WikiLinkProcessor;
     private configurationManager?: ConfigurationManager;
     private dateTimeFormatter: DateTimeFormatter;
-    
+
     /** Factory function to get the currently active text editor */
     getActiveEditor?: () => TextEditor | null;
     /** Factory function to check if a file exists at the given URI */
@@ -36,6 +36,8 @@ export class CommandHandler {
     insertText?: (uri: Uri, position: Position, text: string) => Promise<boolean>;
     /** Factory function to show a message to the user */
     showMessage?: (message: string) => void;
+    /** Factory function to find a note by title across subdirectories */
+    findNoteByTitle?: (title: string) => Promise<Uri | null>;
     
     /**
      * Creates a new CommandHandler instance.
@@ -64,20 +66,35 @@ export class CommandHandler {
         if (!editor) {
             return false;
         }
-        
+
         const position = editor.selection.active;
         const linkText = this.getWikiLinkAtPosition(editor.document, position);
-        
+
         if (!linkText) {
             return false;
         }
-        
+
         try {
             const parsedLink = this.wikiLinkProcessor.parseWikiLink(linkText);
             const fileName = this.wikiLinkProcessor.transformFileName(parsedLink.pageName);
             const extension = this.configurationManager?.getNoteExtension() || '.md';
             const vaultRoot = this.configurationManager?.getVaultRoot() || '';
 
+            // First, try to find the note in subdirectories
+            let foundFile: Uri | null = null;
+            if (this.findNoteByTitle) {
+                foundFile = await this.findNoteByTitle(fileName);
+            }
+
+            if (foundFile) {
+                // If found, open the existing file
+                if (this.openFile) {
+                    await this.openFile(foundFile);
+                }
+                return true;
+            }
+
+            // If not found, check in the default location
             // vaultRootが空の場合は相対パスとして扱い、先頭のスラッシュを付けない
             const fullPath = vaultRoot
                 ? `${vaultRoot}/${fileName}${extension}`
@@ -87,9 +104,9 @@ export class CommandHandler {
                 fsPath: fullPath,
                 toString: () => fullPath
             };
-            
+
             const exists = this.fileExists ? await this.fileExists(filePath) : false;
-            
+
             if (exists) {
                 // 存在する場合は開く
                 if (this.openFile) {
@@ -105,7 +122,7 @@ export class CommandHandler {
                     await this.openFile(filePath);
                 }
             }
-            
+
             return true;
         } catch (error) {
             return false;
