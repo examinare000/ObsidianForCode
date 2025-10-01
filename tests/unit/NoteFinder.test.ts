@@ -311,4 +311,247 @@ describe('NoteFinder', () => {
             expect(findFilesStub.calledOnce).to.be.true;
         });
     });
+
+    describe('Error handling', () => {
+        it('should handle errors from findFiles gracefully in findNoteByTitle', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .rejects(new Error('File system error'));
+
+            const result = await NoteFinder.findNoteByTitle(
+                'Test',
+                mockWorkspaceFolder,
+                'notes',
+                '.md'
+            );
+
+            expect(result).to.be.null;
+        });
+
+        it('should handle errors from findFiles gracefully in findNotesByPrefix', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .rejects(new Error('File system error'));
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'Test',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.be.an('array').that.is.empty;
+        });
+
+        it('should handle errors from findFiles gracefully in getAllNotes', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .rejects(new Error('File system error'));
+
+            const result = await NoteFinder.getAllNotes(
+                mockWorkspaceFolder,
+                'notes',
+                '.md'
+            );
+
+            expect(result).to.be.an('array').that.is.empty;
+        });
+    });
+
+    describe('Edge cases', () => {
+        it('should handle empty title gracefully', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves([]);
+
+            const result = await NoteFinder.findNoteByTitle(
+                '',
+                mockWorkspaceFolder,
+                'notes',
+                '.md'
+            );
+
+            expect(result).to.be.null;
+        });
+
+        it('should handle special characters in filenames', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/Note with spaces.md'),
+                vscode.Uri.file('/test/workspace/notes/Note-with-dashes.md'),
+                vscode.Uri.file('/test/workspace/notes/Note_with_underscores.md'),
+                vscode.Uri.file('/test/workspace/notes/Note (with) [brackets].md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'Note',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.have.lengthOf(4);
+            expect(result[0].title).to.include('Note');
+            expect(result[1].title).to.include('Note');
+            expect(result[2].title).to.include('Note');
+            expect(result[3].title).to.include('Note');
+        });
+
+        it('should handle vaultRoot with path traversal sequences safely', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves([]);
+
+            // Test with potentially dangerous path
+            const result = await NoteFinder.findNoteByTitle(
+                'Test',
+                mockWorkspaceFolder,
+                '../../../etc',
+                '.md'
+            );
+
+            // Should not crash and return null
+            expect(result).to.be.null;
+            // Verify that findFiles was called (path normalization happens in vscode.RelativePattern)
+            expect(findFilesStub.calledOnce).to.be.true;
+        });
+
+        it('should handle empty vaultRoot string', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/Test.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNoteByTitle(
+                'Test',
+                mockWorkspaceFolder,
+                '',
+                '.md'
+            );
+
+            expect(result).to.not.be.null;
+            expect(result!.title).to.equal('Test');
+        });
+
+        it('should handle whitespace-only vaultRoot', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/Test.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNoteByTitle(
+                'Test',
+                mockWorkspaceFolder,
+                '   ',
+                '.md'
+            );
+
+            expect(result).to.not.be.null;
+            expect(result!.title).to.equal('Test');
+        });
+
+        it('should handle files with no extension', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/README')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNoteByTitle(
+                'README',
+                mockWorkspaceFolder,
+                'notes',
+                '' // Empty extension
+            );
+
+            expect(result).to.not.be.null;
+            expect(result!.title).to.equal('README');
+        });
+
+        it('should handle unicode characters in filenames', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/日本語ノート.md'),
+                vscode.Uri.file('/test/workspace/notes/Español.md'),
+                vscode.Uri.file('/test/workspace/notes/中文笔记.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.getAllNotes(
+                mockWorkspaceFolder,
+                'notes',
+                '.md'
+            );
+
+            expect(result).to.have.lengthOf(3);
+            expect(result[0].title).to.equal('日本語ノート');
+            expect(result[1].title).to.equal('Español');
+            expect(result[2].title).to.equal('中文笔记');
+        });
+    });
 });
