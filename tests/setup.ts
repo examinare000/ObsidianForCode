@@ -14,7 +14,12 @@ const vscode = {
                     slugStrategy: 'passthrough',
                     dateFormat: 'YYYY-MM-DD',
                     timeFormat: 'HH:mm',
-                    template: '# {{title}}\n\n'
+                    template: '# {{title}}\n\n',
+                    dailyNoteTemplate: '',
+                    dailyNotePath: 'dailynotes',
+                    dailyNoteEnabled: true,
+                    listContinuationEnabled: true,
+                    searchSubdirectories: true
                 }
             };
             return {
@@ -110,6 +115,73 @@ const vscode = {
     EndOfLine: {
         LF: 1,
         CRLF: 2
+    },
+    ViewColumn: {
+        Active: -1,
+        Beside: -2,
+        One: 1,
+        Two: 2,
+        Three: 3,
+        Four: 4,
+        Five: 5,
+        Six: 6,
+        Seven: 7,
+        Eight: 8,
+        Nine: 9
+    },
+    CompletionTriggerKind: {
+        Invoke: 0,
+        TriggerCharacter: 1,
+        TriggerForIncompleteCompletions: 2
+    },
+    CompletionItemKind: {
+        Text: 0,
+        Method: 1,
+        Function: 2,
+        Constructor: 3,
+        Field: 4,
+        Variable: 5,
+        Class: 6,
+        Interface: 7,
+        Module: 8,
+        Property: 9,
+        Unit: 10,
+        Value: 11,
+        Enum: 12,
+        Keyword: 13,
+        Snippet: 14,
+        Color: 15,
+        File: 16,
+        Reference: 17,
+        Folder: 18,
+        EnumMember: 19,
+        Constant: 20,
+        Struct: 21,
+        Event: 22,
+        Operator: 23,
+        TypeParameter: 24
+    },
+    CompletionItem: class CompletionItem {
+        constructor(public label: string, public kind?: number) {}
+    },
+    MarkdownString: class MarkdownString {
+        value: string;
+        isTrusted?: boolean;
+        constructor(value?: string, supportThemeIcons?: boolean) {
+            this.value = value || '';
+        }
+        appendText(value: string): MarkdownString {
+            this.value += value;
+            return this;
+        }
+        appendMarkdown(value: string): MarkdownString {
+            this.value += value;
+            return this;
+        }
+        appendCodeblock(value: string, language?: string): MarkdownString {
+            this.value += `\`\`\`${language || ''}\n${value}\n\`\`\``;
+            return this;
+        }
     }
 };
 
