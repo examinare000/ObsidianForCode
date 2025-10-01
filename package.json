@@ -31,7 +31,8 @@
     "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
   },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:obsd.handleEnterKey"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
