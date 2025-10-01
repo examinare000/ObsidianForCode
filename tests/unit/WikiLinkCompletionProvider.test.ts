@@ -14,9 +14,34 @@ import { ConfigurationManager } from '../../src/managers/ConfigurationManager';
 import { NoteFinder } from '../../src/utils/NoteFinder';
 
 /**
- * Helper to create a mock TextDocument
+ * Helper to create a mock TextDocument with proper offsetAt/positionAt implementation
  */
 function createMockDocument(lines: string[], uri: vscode.Uri = vscode.Uri.file('/test/document.md')): vscode.TextDocument {
+    // Calculate offset for a given position
+    const offsetAt = (position: vscode.Position): number => {
+        let offset = 0;
+        for (let i = 0; i < position.line && i < lines.length; i++) {
+            offset += lines[i].length + 1; // +1 for newline
+        }
+        offset += Math.min(position.character, lines[position.line]?.length || 0);
+        return offset;
+    };
+
+    // Calculate position for a given offset
+    const positionAt = (offset: number): vscode.Position => {
+        let currentOffset = 0;
+        for (let line = 0; line < lines.length; line++) {
+            const lineLength = lines[line].length;
+            if (currentOffset + lineLength >= offset) {
+                return new vscode.Position(line, offset - currentOffset);
+            }
+            currentOffset += lineLength + 1; // +1 for newline
+        }
+        // If offset is beyond document, return end position
+        const lastLine = lines.length - 1;
+        return new vscode.Position(lastLine, lines[lastLine]?.length || 0);
+    };
+
     return {
         uri: uri,
         fileName: uri.fsPath,
@@ -42,8 +67,8 @@ function createMockDocument(lines: string[], uri: vscode.Uri = vscode.Uri.file('
         getWordRangeAtPosition: () => undefined,
         validateRange: (range: vscode.Range) => range,
         validatePosition: (position: vscode.Position) => position,
-        offsetAt: () => 0,
-        positionAt: () => new vscode.Position(0, 0),
+        offsetAt: offsetAt,
+        positionAt: positionAt,
         save: async () => true,
         eol: vscode.EndOfLine.LF,
         notebook: undefined
