@@ -6,11 +6,35 @@ import { expect } from 'chai';
 // VS Code APIのモック
 const vscode = {
     workspace: {
-        getConfiguration: () => ({
-            get: (key: string, defaultValue?: any) => defaultValue,
-            has: () => true,
-            update: () => Promise.resolve()
-        }),
+        getConfiguration: (section?: string) => {
+            const configData: Record<string, any> = {
+                obsd: {
+                    vaultRoot: '/test/vault',
+                    noteExtension: '.md',
+                    slugStrategy: 'passthrough',
+                    dateFormat: 'YYYY-MM-DD',
+                    timeFormat: 'HH:mm',
+                    template: '# {{title}}\n\n'
+                }
+            };
+            return {
+                get: (key: string, defaultValue?: any) => {
+                    const fullKey = section ? `${section}.${key}` : key;
+                    const keys = fullKey.split('.');
+                    let value = configData;
+                    for (const k of keys) {
+                        if (value && typeof value === 'object' && k in value) {
+                            value = value[k];
+                        } else {
+                            return defaultValue;
+                        }
+                    }
+                    return value !== undefined ? value : defaultValue;
+                },
+                has: (key: string) => true,
+                update: () => Promise.resolve()
+            };
+        },
         workspaceFolders: [{
             uri: { fsPath: '/test/workspace' },
             name: 'test-workspace',
@@ -20,13 +44,22 @@ const vscode = {
             stat: async () => ({ type: 1 }),
             readFile: async () => new Uint8Array(),
             writeFile: async () => {},
-            createDirectory: async () => {}
-        }
+            createDirectory: async () => {},
+            delete: async () => {}
+        },
+        findFiles: async () => [],
+        getWorkspaceFolder: () => ({
+            uri: { fsPath: '/test/workspace' },
+            name: 'test-workspace',
+            index: 0
+        })
     },
     window: {
         showTextDocument: async () => ({}),
         showErrorMessage: () => {},
-        showInformationMessage: () => {}
+        showInformationMessage: () => {},
+        onDidChangeTextEditorSelection: () => ({ dispose: () => {} }),
+        onDidChangeActiveTextEditor: () => ({ dispose: () => {} })
     },
     commands: {
         executeCommand: () => Promise.resolve(),
@@ -36,11 +69,25 @@ const vscode = {
         registerDocumentLinkProvider: () => ({ dispose: () => {} })
     },
     Uri: {
-        file: (path: string) => ({ fsPath: path, toString: () => path }),
+        file: (path: string) => ({
+            fsPath: path,
+            toString: () => path,
+            with: (change: any) => ({
+                fsPath: change.path || path,
+                toString: () => change.path || path
+            })
+        }),
         joinPath: (base: any, ...paths: string[]) => ({
             fsPath: `${base.fsPath}/${paths.join('/')}`,
-            toString: () => `${base.fsPath}/${paths.join('/')}`
+            toString: () => `${base.fsPath}/${paths.join('/')}`,
+            with: (change: any) => ({
+                fsPath: change.path || `${base.fsPath}/${paths.join('/')}`,
+                toString: () => change.path || `${base.fsPath}/${paths.join('/')}`
+            })
         })
+    },
+    RelativePattern: class RelativePattern {
+        constructor(public base: any, public pattern: string) {}
     },
     Range: class Range {
         constructor(public start: any, public end: any) {}
@@ -48,9 +95,21 @@ const vscode = {
     Position: class Position {
         constructor(public line: number, public character: number) {}
     },
+    Selection: class Selection {
+        constructor(public anchor: any, public active: any) {}
+    },
+    CancellationTokenSource: class CancellationTokenSource {
+        token = { isCancellationRequested: false, onCancellationRequested: () => ({ dispose: () => {} }) };
+        cancel() {}
+        dispose() {}
+    },
     FileType: {
         File: 1,
         Directory: 2
+    },
+    EndOfLine: {
+        LF: 1,
+        CRLF: 2
     }
 };
 

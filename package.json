@@ -32,6 +32,11 @@
   },
   "activationEvents": [
     "onLanguage:markdown",
+    "onCommand:obsd.openOrCreateWikiLink",
+    "onCommand:obsd.insertDate",
+    "onCommand:obsd.insertTime",
+    "onCommand:obsd.preview",
+    "onCommand:obsd.openDailyNote",
     "onCommand:obsd.handleEnterKey"
   ],
   "main": "./out/src/extension.js",
