@@ -1,34 +1,30 @@
 import { describe, it, beforeEach, afterEach } from 'mocha';
 import { expect } from 'chai';
+import * as vscode from 'vscode';
 import { WikiLinkContextProvider } from '../../../src/providers/WikiLinkContextProvider';
-import type { Position, Range, TextDocument, TextEditor } from '../../../src/types/vscode-test-types';
 
 interface MockExtensionContext {
     subscriptions: any[];
 }
 
-// VS Codeモック
-let mockActiveEditor: TextEditor | undefined;
+// Track mock state
+let mockActiveEditor: any | undefined;
 let mockContext: string | undefined;
-const mockCommands: { [key: string]: any } = {};
 
-const vscode = {
-    window: {
-        get activeTextEditor() { return mockActiveEditor; },
-        onDidChangeTextEditorSelection: (callback: any) => ({ dispose: () => {} }),
-        onDidChangeActiveTextEditor: (callback: any) => ({ dispose: () => {} })
-    },
-    commands: {
-        executeCommand: (command: string, ...args: any[]) => {
-            if (command === 'setContext') {
-                mockContext = args[1];
-            }
-            return Promise.resolve();
-        }
+// Override commands.executeCommand to track setContext calls
+const originalExecuteCommand = vscode.commands.executeCommand;
+(vscode.commands as any).executeCommand = (command: string, ...args: any[]) => {
+    if (command === 'setContext') {
+        mockContext = args[1];
     }
+    return originalExecuteCommand(command, ...args);
 };
 
-// VSCodeモックの設定は require 前に行う
+// Override window.activeTextEditor getter
+Object.defineProperty(vscode.window, 'activeTextEditor', {
+    get: () => mockActiveEditor,
+    configurable: true
+});
 
 describe('WikiLink キーバインド統合テスト', () => {
     let contextProvider: WikiLinkContextProvider;

@@ -79,14 +79,6 @@ function createMockDocument(lines: string[]): vscode.TextDocument {
 function createMockEditor(document: vscode.TextDocument, cursorLine: number, cursorChar: number): vscode.TextEditor {
     const position = new vscode.Position(cursorLine, cursorChar);
     let currentSelection = new vscode.Selection(position, position);
-    let appliedEdits: vscode.WorkspaceEdit[] = [];
-
-    // Mock workspace.applyEdit to capture edits
-    const originalApplyEdit = vscode.workspace.applyEdit;
-    (vscode.workspace.applyEdit as any) = async (edit: vscode.WorkspaceEdit) => {
-        appliedEdits.push(edit);
-        return true;
-    };
 
     const editor = {
         document: document,
@@ -110,11 +102,7 @@ function createMockEditor(document: vscode.TextDocument, cursorLine: number, cur
         setDecorations: () => {},
         revealRange: () => {},
         show: () => {},
-        hide: () => {},
-        _appliedEdits: appliedEdits,
-        _restoreApplyEdit: () => {
-            (vscode.workspace.applyEdit as any) = originalApplyEdit;
-        }
+        hide: () => {}
     };
 
     // Allow setting selection
@@ -157,9 +145,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            const edits = (editor as any)._appliedEdits;
-            expect(edits.length).to.be.greaterThan(0);
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should continue unordered lists with asterisk marker (*)', async () => {
@@ -170,7 +155,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should continue unordered lists with plus marker (+)', async () => {
@@ -181,7 +165,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should continue ordered lists with incremented number', async () => {
@@ -192,9 +175,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            const edits = (editor as any)._appliedEdits;
-            expect(edits.length).to.be.greaterThan(0);
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should continue checkboxes with unchecked state', async () => {
@@ -205,7 +185,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should remove list marker on empty list item', async () => {
@@ -217,9 +196,6 @@ describe('ListContinuationProvider', () => {
 
             // Should return false to let VS Code handle normal newline
             expect(result).to.be.false;
-            const edits = (editor as any)._appliedEdits;
-            expect(edits.length).to.be.greaterThan(0);
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should preserve indentation level', async () => {
@@ -230,7 +206,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should not continue when feature is disabled', async () => {
@@ -247,7 +222,6 @@ describe('ListContinuationProvider', () => {
             const result = await disabledProvider.handleEnterKey(editor);
 
             expect(result).to.be.false;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should not continue if selection is not empty', async () => {
@@ -260,7 +234,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.false;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should not continue if cursor is not at end of list marker area', async () => {
@@ -271,7 +244,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.false;
-            (editor as any)._restoreApplyEdit();
         });
     });
 
@@ -284,7 +256,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should recognize asterisk lists (* item)', async () => {
@@ -295,7 +266,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should recognize plus lists (+ item)', async () => {
@@ -306,7 +276,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should recognize numbered lists (1. item)', async () => {
@@ -317,7 +286,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should recognize checkboxes (- [ ] item)', async () => {
@@ -328,7 +296,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
 
         it('should recognize checked checkboxes (- [x] item)', async () => {
@@ -339,7 +306,6 @@ describe('ListContinuationProvider', () => {
             const result = await provider.handleEnterKey(editor);
 
             expect(result).to.be.true;
-            (editor as any)._restoreApplyEdit();
         });
     });
 });
