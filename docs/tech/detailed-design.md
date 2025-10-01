@@ -1,28 +1,36 @@
 # ObsidianForCode 詳細設計書
 
+> **更新情報**: このドキュメントは v0.1.0 時点の初期設計を記録しています。
+> 最新の実装状況は `development-status.md` を参照してください。
+> 現在バージョン: v0.4.4 (2025-10-01)
+
 ## 1. アーキテクチャ概要
 
 ### 1.1 システム全体構成
 ```
-┌─────────────────────────────────────────┐
-│            VS Code Host                 │
-├─────────────────────────────────────────┤
-│  ObsidianForCode Extension              │
-│  ┌─────────────┐  ┌─────────────────┐  │
-│  │  Extension  │  │   Webview       │  │
-│  │   Host      │←→│   Provider      │  │
-│  └─────────────┘  └─────────────────┘  │
-│  ┌─────────────┐  ┌─────────────────┐  │
-│  │  Document   │  │   Command       │  │
-│  │Link Provider│  │   Handler       │  │
-│  └─────────────┘  └─────────────────┘  │
-│  ┌─────────────┐  ┌─────────────────┐  │
-│  │ WikiLink    │  │ Configuration   │  │
-│  │ Processor   │  │   Manager       │  │
-│  └─────────────┘  └─────────────────┘  │
-├─────────────────────────────────────────┤
-│         Workspace FileSystem           │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                 VS Code Host                         │
+├──────────────────────────────────────────────────────┤
+│  ObsidianForCode Extension (v0.4.4)                  │
+│  ┌──────────────┐  ┌────────────────────────────┐   │
+│  │  Extension   │  │   Providers                │   │
+│  │   Host       │←→│  - DocumentLink            │   │
+│  └──────────────┘  │  - Completion              │   │
+│  ┌──────────────┐  │  - ListContinuation        │   │
+│  │  Command     │  │  - Context                 │   │
+│  │  Handler     │  └────────────────────────────┘   │
+│  └──────────────┘  ┌────────────────────────────┐   │
+│  ┌──────────────┐  │   Utilities                │   │
+│  │ WikiLink     │  │  - NoteFinder              │   │
+│  │ Processor    │  │  - DateTimeFormatter       │   │
+│  └──────────────┘  │  - DailyNoteManager        │   │
+│  ┌──────────────┐  └────────────────────────────┘   │
+│  │Configuration │                                    │
+│  │  Manager     │                                    │
+│  └──────────────┘                                    │
+├──────────────────────────────────────────────────────┤
+│           Workspace FileSystem                       │
+└──────────────────────────────────────────────────────┘
 ```
 
 ### 1.2 主要コンポーネント責務
@@ -35,25 +43,42 @@
 | Command Handler | コマンド実行・キーバインド処理 | VS Code Commands |
 | DailyNote Manager | 日次ノート作成・管理 | workspace.fs |
 | Context Provider | WikiLinkコンテキスト検出 | TextEditor |
-| Webview Provider | Markdownプレビュー表示 | Webview API |
+| **CompletionProvider** | **WikiLink補完機能** | **TextDocument, NoteFinder** |
+| **ListContinuationProvider** | **リスト自動継続** | **TextEditor** |
+| **NoteFinder** | **ノート検索・優先順位付け** | **workspace.findFiles** |
 | Configuration Manager | 設定値管理・バリデーション | VS Code Settings |
 | DateTime Formatter | 日時フォーマット処理 | なし |
+
+> **v0.4.x追加機能**: 太字項目は初期設計後に追加された機能です。
 
 ## 2. VS Code拡張機能アーキテクチャ
 
 ### 2.1 package.json設計
 
+> **注意**: 以下は初期設計です。最新の `package.json` では以下の機能が追加されています：
+> - `obsd.openDailyNote` コマンド
+> - `obsd.handleEnterKey` コマンド
+> - `dailyNoteTemplate`, `dailyNotePath`, `dailyNoteEnabled` 設定
+> - `listContinuationEnabled`, `searchSubdirectories` 設定
+> - activationEvents の拡充
+
 ```json
 {
   "name": "obsidianforcode",
   "displayName": "Obsidian for Code",
-  "version": "0.1.0",
-  "engines": { "vscode": "^1.74.0" },
+  "version": "0.4.4",
+  "engines": { "vscode": "^1.103.0" },
   "categories": ["Other"],
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:obsd.openOrCreateWikiLink",
+    "onCommand:obsd.insertDate",
+    "onCommand:obsd.insertTime",
+    "onCommand:obsd.preview",
+    "onCommand:obsd.openDailyNote",
+    "onCommand:obsd.handleEnterKey"
   ],
-  "main": "./out/extension.js",
+  "main": "./out/src/extension.js",
   "contributes": {
     "commands": [
       {
@@ -65,12 +90,20 @@
         "title": "Insert Date"
       },
       {
-        "command": "obsd.insertTime", 
+        "command": "obsd.insertTime",
         "title": "Insert Time"
       },
       {
         "command": "obsd.preview",
         "title": "Preview Markdown"
+      },
+      {
+        "command": "obsd.openDailyNote",
+        "title": "Open Daily Note"
+      },
+      {
+        "command": "obsd.handleEnterKey",
+        "title": "Handle Enter Key"
       }
     ],
     "keybindings": [
