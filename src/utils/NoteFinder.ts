@@ -25,14 +25,14 @@ export class NoteFinder {
      * @param workspaceFolder - The workspace folder to search within
      * @param vaultRoot - Optional vault root path to constrain the search
      * @param extension - File extension to search for (default: '.md')
-     * @returns Promise resolving to the URI of the found file, or null if not found
+     * @returns Promise resolving to note information, or null if not found
      */
     static async findNoteByTitle(
         title: string,
         workspaceFolder: vscode.WorkspaceFolder,
         vaultRoot?: string,
         extension: string = '.md'
-    ): Promise<vscode.Uri | null> {
+    ): Promise<{ title: string; uri: vscode.Uri; relativePath: string } | null> {
         // Construct the search pattern
         const searchBase = vaultRoot && vaultRoot.trim() !== ''
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
@@ -50,11 +50,19 @@ export class NoteFinder {
 
             if (files.length > 0) {
                 // Return the first match (prioritize root level if multiple matches)
-                return files.sort((a, b) => {
+                const sortedFiles = files.sort((a, b) => {
                     const aDepth = a.fsPath.split(path.sep).length;
                     const bDepth = b.fsPath.split(path.sep).length;
                     return aDepth - bDepth;
-                })[0];
+                });
+
+                const file = sortedFiles[0];
+                const relativePath = path.relative(searchBase, file.fsPath);
+                return {
+                    title: path.basename(file.fsPath, extension),
+                    uri: file,
+                    relativePath: relativePath
+                };
             }
         } catch (error) {
             console.error('Error finding note:', error);
@@ -107,29 +115,34 @@ export class NoteFinder {
                         uri: file,
                         relativePath: relativePath
                     });
-
-                    if (results.length >= maxResults) {
-                        break;
-                    }
                 }
             }
 
-            // Sort by relevance (exact match first, then by path depth)
-            return results.sort((a, b) => {
+            // Sort by relevance (exact match first, then by path depth, then alphabetically)
+            results.sort((a, b) => {
                 // Exact match (case-insensitive) comes first
                 const aExact = a.title.toLowerCase() === prefix.toLowerCase();
                 const bExact = b.title.toLowerCase() === prefix.toLowerCase();
-                if (aExact && !bExact) return -1;
-                if (!aExact && bExact) return 1;
+                if (aExact && !bExact) {
+                    return -1;
+                }
+                if (!aExact && bExact) {
+                    return 1;
+                }
 
                 // Then sort by path depth (shallower first)
                 const aDepth = a.relativePath.split(path.sep).length;
                 const bDepth = b.relativePath.split(path.sep).length;
-                if (aDepth !== bDepth) return aDepth - bDepth;
+                if (aDepth !== bDepth) {
+                    return aDepth - bDepth;
+                }
 
                 // Finally sort alphabetically
                 return a.title.localeCompare(b.title);
             });
+
+            // Return only the top maxResults entries
+            return results.slice(0, maxResults);
         } catch (error) {
             console.error('Error finding notes by prefix:', error);
             return [];
@@ -143,13 +156,13 @@ export class NoteFinder {
      * @param workspaceFolder - The workspace folder to search within
      * @param vaultRoot - Optional vault root path to constrain the search
      * @param extension - File extension to search for (default: '.md')
-     * @returns Promise resolving to an array of note URIs
+     * @returns Promise resolving to an array of note information
      */
     static async getAllNotes(
         workspaceFolder: vscode.WorkspaceFolder,
         vaultRoot?: string,
         extension: string = '.md'
-    ): Promise<vscode.Uri[]> {
+    ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]> {
         const searchBase = vaultRoot && vaultRoot.trim() !== ''
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
             : workspaceFolder.uri.fsPath;
@@ -160,7 +173,16 @@ export class NoteFinder {
         );
 
         try {
-            return await vscode.workspace.findFiles(pattern, '**/node_modules/**');
+            const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
+            return files.map(file => {
+                const fileName = path.basename(file.fsPath, extension);
+                const relativePath = path.relative(searchBase, file.fsPath);
+                return {
+                    title: fileName,
+                    uri: file,
+                    relativePath: relativePath
+                };
+            });
         } catch (error) {
             console.error('Error getting all notes:', error);
             return [];

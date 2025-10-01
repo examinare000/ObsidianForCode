@@ -344,7 +344,7 @@ async function openOrCreateWikiLink(configManager: ConfigurationManager): Promis
 
         if (foundFile) {
             // If found, open the existing file
-            await vscode.window.showTextDocument(foundFile);
+            await vscode.window.showTextDocument(foundFile.uri);
             return;
         }
 
