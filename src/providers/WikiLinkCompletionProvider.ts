@@ -68,8 +68,8 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         // Extract the prefix typed so far
         const prefix = textBeforeCursor.substring(lastOpenBrackets + 2);
 
-        // Get workspace folder
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        // Get workspace folder for the current document
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         if (!workspaceFolder) {
             return null;
         }
