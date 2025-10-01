@@ -102,46 +102,47 @@ export class ListContinuationProvider {
             // Empty list item - remove the list marker and outdent
             const edit = new vscode.WorkspaceEdit();
 
-            // Delete the current line's list marker
+            // Replace the current line with an empty string
             const lineRange = new vscode.Range(
                 position.line,
                 0,
                 position.line,
                 line.text.length
             );
-            edit.delete(document.uri, lineRange);
-
-            // Insert a newline
-            edit.insert(document.uri, new vscode.Position(position.line, 0), '\n');
+            edit.replace(document.uri, lineRange, '');
 
             await vscode.workspace.applyEdit(edit);
 
-            // Move cursor to the beginning of the new line
+            // Move cursor to the beginning of the line
             const newPosition = new vscode.Position(position.line, 0);
             editor.selection = new vscode.Selection(newPosition, newPosition);
 
-            return true;
+            // Return false to let VS Code's normal newline/typing behavior proceed
+            return false;
         }
 
         // Continue the list
         let newLineContent = '';
 
         switch (patternType) {
-            case 'checkbox':
+            case 'checkbox': {
                 const marker = matchedPattern[2];
                 // Always create unchecked checkbox for new items
                 newLineContent = `${indent}${marker} [ ] `;
                 break;
+            }
 
-            case 'unordered':
+            case 'unordered': {
                 const listMarker = matchedPattern[2];
                 newLineContent = `${indent}${listMarker} `;
                 break;
+            }
 
-            case 'ordered':
+            case 'ordered': {
                 const number = parseInt(matchedPattern[2], 10);
                 newLineContent = `${indent}${number + 1}. `;
                 break;
+            }
         }
 
         // Insert the new line with the continued list marker
