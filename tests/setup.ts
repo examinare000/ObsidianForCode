@@ -57,7 +57,8 @@ const vscode = {
             uri: { fsPath: '/test/workspace' },
             name: 'test-workspace',
             index: 0
-        })
+        }),
+        applyEdit: async () => true
     },
     window: {
         showTextDocument: async () => ({}),
@@ -181,6 +182,27 @@ const vscode = {
         appendCodeblock(value: string, language?: string): MarkdownString {
             this.value += `\`\`\`${language || ''}\n${value}\n\`\`\``;
             return this;
+        }
+    },
+    WorkspaceEdit: class WorkspaceEdit {
+        private _edits: Map<string, any[]> = new Map();
+        replace(uri: any, range: any, newText: string): void {
+            if (!this._edits.has(uri.toString())) {
+                this._edits.set(uri.toString(), []);
+            }
+            this._edits.get(uri.toString())!.push({ type: 'replace', range, newText });
+        }
+        insert(uri: any, position: any, newText: string): void {
+            if (!this._edits.has(uri.toString())) {
+                this._edits.set(uri.toString(), []);
+            }
+            this._edits.get(uri.toString())!.push({ type: 'insert', position, newText });
+        }
+        delete(uri: any, range: any): void {
+            if (!this._edits.has(uri.toString())) {
+                this._edits.set(uri.toString(), []);
+            }
+            this._edits.get(uri.toString())!.push({ type: 'delete', range });
         }
     }
 };
