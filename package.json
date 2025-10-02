@@ -2,7 +2,7 @@
   "name": "obsidianforcode",
   "displayName": "Obsidian for Code",
   "description": "Obsidian-like WikiLink functionality for VS Code",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "publisher": "obsidianforcode",
   "engines": {
     "vscode": "^1.103.0"
