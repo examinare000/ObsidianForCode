@@ -14,7 +14,6 @@ import { DateTimeFormatter } from './utils/DateTimeFormatter';
 import { ConfigurationManager } from './managers/ConfigurationManager';
 import { WikiLinkContextProvider } from './providers/WikiLinkContextProvider';
 import { WikiLinkCompletionProvider } from './providers/WikiLinkCompletionProvider';
-import { ListContinuationProvider } from './providers/ListContinuationProvider';
 import { DailyNoteManager } from './managers/DailyNoteManager';
 import { PathUtil } from './utils/PathUtil';
 import { NoteFinder } from './utils/NoteFinder';
@@ -92,15 +91,6 @@ export function activate(context: vscode.ExtensionContext) {
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register WikiLinkCompletionProvider');
         return;
-    }
-
-    // List ContinuationProvider登録
-    let listContinuationDisposable: vscode.Disposable | undefined;
-    try {
-        const listContinuationProvider = new ListContinuationProvider(configManager);
-        listContinuationDisposable = listContinuationProvider.register(context);
-    } catch (error) {
-        errors.push(`Failed to register ListContinuationProvider: ${error}`);
     }
 
     // Commands登録（個別エラーハンドリング）
@@ -183,10 +173,6 @@ export function activate(context: vscode.ExtensionContext) {
             completionProviderDisposable,
             ...commands
         ];
-
-        if (listContinuationDisposable) {
-            subscriptions.push(listContinuationDisposable);
-        }
 
         context.subscriptions.push(...subscriptions);
     } catch (error) {
