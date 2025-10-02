@@ -6,21 +6,31 @@
 ## 開発完了状況
 
 ### 📊 開発統計
-- **開発期間**: 2025-09-09 ～ 2025-10-01 (継続開発)
+- **開発期間**: 2025-09-09 ～ 2025-10-02 (継続開発)
 - **開発手法**: Test-Driven Development (TDD) - t-wada方式
-- **現在バージョン**: v0.4.5-dev
-- **テスト数**: 225個 (215個パス、10個スキップ)
-- **テスト成功率**: 95.6%
-- **コンポーネント数**: 12個
-- **ADR記録**: 15件
+- **現在バージョン**: v0.4.6-dev
+- **テスト数**: 237個 (227個パス、10個スキップ)
+- **テスト成功率**: 95.8%
+- **コンポーネント数**: 11個（ListContinuationProvider削除）
+- **ADR記録**: 17件（ADR-016, ADR-017追加）
 
 ### ✅ 実装完了機能
+
+#### v0.4.6 WikiLink補完強化・リスト継続廃止 (2025-10-02)
+- ✅ **WikiLink補完機能の厳格化** (ADR-016)
+  - カーソル右に`]]`が存在する場合のみ補完を提供
+  - `[[]]`内に1文字以上の入力がある場合のみ補完を提供
+  - サブフォルダ内ファイルの補完対応を明示化
+  - テスト: 16個（新規テストケース6個追加）
+- ✅ **Markdownリスト継続機能の廃止** (ADR-017)
+  - `ListContinuationProvider`削除（VSCode標準機能との重複）
+  - WikiLink機能への焦点明確化
+  - コードベース簡素化（約500行削減）
 
 #### v0.4.5 テスト品質向上 (2025-10-01)
 - ✅ **テスト失敗解消** - 95.6%成功率達成
   - 215個のテスト成功、10個スキップ
   - PathUtil: Windows予約名処理強化
-  - ListContinuationProvider: パターンマッチング改善
   - VS Code API モック: Selection.isEmpty実装
   - WikiLinkCompletionProvider: Range生成修正
   - グローバルモック統合完了
@@ -34,10 +44,10 @@
 #### v0.4.2-0.4.3 機能追加 (2025-09-18 - 2025-09-22)
 - ✅ **拡張ノート機能** - 品質向上と機能追加
   - WikiLink補完機能の実装
-  - リスト自動継続機能の追加
   - サブディレクトリ検索設定の追加
-  - NoteFinder、WikiLinkCompletionProvider、ListContinuationProviderの実装
+  - NoteFinder、WikiLinkCompletionProviderの実装
   - テスト数大幅増加（46 → 225個）
+  - ※リスト自動継続機能は後にv0.4.6で廃止（ADR-017）
 
 #### v0.4.2 Git戦略確立 (2025-09-18)
 - ✅ **Git戦略確立** - Claude Code動作制約の明文化
@@ -97,14 +107,13 @@
 - ✅ **WikiLinkContextProvider** - キーバインドコンテキスト管理
   - `obsd.inWikiLink` コンテキスト検出
   - リアルタイムカーソル位置追跡
-- ✅ **WikiLinkCompletionProvider** - WikiLink補完機能
+- ✅ **WikiLinkCompletionProvider** - WikiLink補完機能（v0.4.6で厳格化）
   - ブラケット内での自動補完
-  - ノートファイル名サジェスト
-  - テスト: 10個
-- ✅ **ListContinuationProvider** - リスト自動継続
-  - 箇条書き・番号付きリストの継続
-  - チェックボックスの自動挿入
-  - テスト: 16個
+  - カーソル右に`]]`必須、1文字以上入力必須（v0.4.6）
+  - サブフォルダ対応明示化（v0.4.6）
+  - テスト: 16個（v0.4.6で6個追加）
+- ❌ **ListContinuationProvider** - リスト自動継続（v0.4.6で廃止）
+  - VSCode標準機能との重複により削除（ADR-017）
 
 #### VS Code Extension統合
 - ✅ **extension.ts** - extensionエントリーポイント
@@ -157,11 +166,11 @@ WikiLinkDocumentLinkProvider: 9 tests (9 passing)
 CommandHandler: 17 tests (17 passing)
 ConfigurationManager: 16 tests (11 passing, 5 skipped)
 NoteFinder: 20 tests (20 passing)
-WikiLinkCompletionProvider: 10 tests (10 passing)
-ListContinuationProvider: 16 tests (16 passing)
+WikiLinkCompletionProvider: 16 tests (16 passing) ← v0.4.6で6個追加
 DailyNoteManager: 17 tests (12 passing, 5 skipped)
 WikiLinkContextProvider: 8 tests (8 passing)
 PathUtil: 27 tests (24 passing, 3 skipped)
+ListContinuationProvider: 削除済み（ADR-017）
 その他統合テスト: 51 tests (50 passing, 1 skipped)
 ──────────────────────────────
 Total: 225 tests (215 passing, 10 skipped)

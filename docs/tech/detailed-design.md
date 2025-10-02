@@ -17,8 +17,8 @@
 │  │  Extension   │  │   Providers                │   │
 │  │   Host       │←→│  - DocumentLink            │   │
 │  └──────────────┘  │  - Completion              │   │
-│  ┌──────────────┐  │  - ListContinuation        │   │
-│  │  Command     │  │  - Context                 │   │
+│  ┌──────────────┐  │  - Context                 │   │
+│  │  Command     │  │                            │   │
 │  │  Handler     │  └────────────────────────────┘   │
 │  └──────────────┘  ┌────────────────────────────┐   │
 │  ┌──────────────┐  │   Utilities                │   │
@@ -44,9 +44,8 @@
 | Command Handler | コマンド実行・キーバインド処理 | VS Code Commands |
 | DailyNote Manager | 日次ノート作成・管理 | workspace.fs |
 | Context Provider | WikiLinkコンテキスト検出 | TextEditor |
-| **CompletionProvider** | **WikiLink補完機能** | **TextDocument, NoteFinder** |
-| **ListContinuationProvider** | **リスト自動継続** | **TextEditor** |
-| **NoteFinder** | **ノート検索・優先順位付け** | **workspace.findFiles** |
+| **CompletionProvider** | **WikiLink補完機能（厳格化）** | **TextDocument, NoteFinder** |
+| **NoteFinder** | **ノート検索・優先順位付け（サブフォルダ対応）** | **workspace.findFiles** |
 | Configuration Manager | 設定値管理・バリデーション | VS Code Settings |
 | DateTime Formatter | 日時フォーマット処理 | なし |
 
@@ -58,10 +57,14 @@
 
 > **注意**: 以下は初期設計です。最新の `package.json` では以下の機能が追加されています：
 > - `obsd.openDailyNote` コマンド
-> - `obsd.handleEnterKey` コマンド
 > - `dailyNoteTemplate`, `dailyNotePath`, `dailyNoteEnabled` 設定
-> - `listContinuationEnabled`, `searchSubdirectories` 設定
+> - `searchSubdirectories` 設定
 > - activationEvents の拡充
+>
+> **廃止機能** (ADR-017):
+> - `obsd.handleEnterKey` コマンド（削除済み）
+> - `ListContinuationProvider`（削除済み）
+> - `listContinuationEnabled` 設定（削除済み）
 
 ```json
 {
@@ -76,8 +79,7 @@
     "onCommand:obsd.insertDate",
     "onCommand:obsd.insertTime",
     "onCommand:obsd.preview",
-    "onCommand:obsd.openDailyNote",
-    "onCommand:obsd.handleEnterKey"
+    "onCommand:obsd.openDailyNote"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
@@ -101,10 +103,6 @@
       {
         "command": "obsd.openDailyNote",
         "title": "Open Daily Note"
-      },
-      {
-        "command": "obsd.handleEnterKey",
-        "title": "Handle Enter Key"
       }
     ],
     "keybindings": [
@@ -1839,9 +1837,14 @@ export class NoteFinder {
 }
 ```
 
-### 17.3 WikiLinkCompletionProvider設計
+### 17.3 WikiLinkCompletionProvider設計（ADR-016準拠）
 
 #### 17.3.1 自動補完プロバイダー実装
+**動作条件の厳格化**:
+- カーソルの右に`]]`が存在する場合のみ補完を提供
+- `[[]]`内に1文字以上の入力がある場合のみ補完を提供
+- サブフォルダ内のファイルも補完候補として提示
+
 ```typescript
 // src/providers/WikiLinkCompletionProvider.ts
 export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider {
@@ -1853,19 +1856,28 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         token: vscode.CancellationToken,
         context: vscode.CompletionContext
     ): Promise<vscode.CompletionItem[] | null> {
-        const line = document.lineAt(position.line);
-        const textBeforeCursor = line.text.substring(0, position.character);
+        const lineText = document.lineAt(position.line).text;
+        const textBeforeCursor = lineText.substring(0, position.character);
+        const textAfterCursor = lineText.substring(position.character);
 
         // WikiLink内部検出
         const lastOpenBrackets = textBeforeCursor.lastIndexOf('[[');
-        const lastCloseBrackets = textBeforeCursor.lastIndexOf(']]');
+        if (lastOpenBrackets === -1) {
+            return null;
+        }
 
-        if (lastOpenBrackets === -1 || lastCloseBrackets > lastOpenBrackets) {
+        // 【新要件】カーソルの右に]] が存在するか確認
+        if (!textAfterCursor.startsWith(']]')) {
             return null;
         }
 
         // プレフィックス抽出
         const prefix = textBeforeCursor.substring(lastOpenBrackets + 2);
+
+        // 【新要件】[[]]内に1文字以上の入力があるか確認
+        if (prefix.length === 0) {
+            return null;
+        }
 
         // マルチルートワークスペース対応
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -1873,7 +1885,7 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             return null;
         }
 
-        // ノート候補取得
+        // ノート候補取得（サブフォルダ対応）
         const vaultRoot = this.configManager.getVaultRoot();
         const extension = this.configManager.getNoteExtension();
 
@@ -1882,7 +1894,7 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             workspaceFolder,
             vaultRoot,
             extension,
-            50
+            50 // 最大候補数
         );
 
         // CompletionItem変換
@@ -1893,22 +1905,17 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             );
 
             item.insertText = note.title;
-            item.detail = note.relativePath;
+            item.detail = note.relativePath; // サブフォルダパスを表示
             item.sortText = String(index).padStart(3, '0');
             item.documentation = new vscode.MarkdownString(
-                `**${note.title}**\n\n📁 ${note.relativePath}`
+                `Link to: **${note.title}**\n\nPath: \`${note.relativePath}\``
             );
 
-            // 閉じ括弧の自動調整
-            const afterCursor = line.text.substring(position.character);
-            if (afterCursor.startsWith(']]')) {
-                item.range = new vscode.Range(
-                    position.line,
-                    lastOpenBrackets + 2,
-                    position.line,
-                    position.character
-                );
-            }
+            // ]]が存在する前提で範囲を設定
+            item.range = new vscode.Range(
+                new vscode.Position(position.line, lastOpenBrackets + 2),
+                new vscode.Position(position.line, position.character)
+            );
 
             return item;
         });
@@ -1923,145 +1930,11 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
 }
 ```
 
-### 17.4 ListContinuationProvider設計
+### 17.4 設定項目の追加
 
-#### 17.4.1 リスト自動継続プロバイダー
-```typescript
-// src/providers/ListContinuationProvider.ts
-export class ListContinuationProvider {
-    private listPatterns = {
-        unordered: /^(\s*)([-*+])\s+(.*)$/,
-        ordered: /^(\s*)(\d+)\.\s+(.*)$/,
-        checkbox: /^(\s*)([-*+])\s+\[([ x])\]\s+(.*)$/
-    };
-
-    constructor(private configManager: ConfigurationManager) {}
-
-    async handleEnterKey(editor: vscode.TextEditor): Promise<boolean> {
-        if (!this.configManager.getListContinuationEnabled()) {
-            return false;
-        }
-
-        const position = editor.selection.active;
-        const line = editor.document.lineAt(position.line);
-
-        // リストパターン検出
-        const { patternType, matchedPattern } = this.detectListPattern(line.text);
-        if (!patternType || !matchedPattern) {
-            return false;
-        }
-
-        const indent = matchedPattern[1];
-        const contentAfterMarker = this.getContentAfterMarker(patternType, matchedPattern);
-
-        // 空リストアイテムの削除
-        if (!contentAfterMarker || contentAfterMarker.trim() === '') {
-            const edit = new vscode.WorkspaceEdit();
-            const lineRange = new vscode.Range(
-                position.line,
-                0,
-                position.line,
-                line.text.length
-            );
-            edit.replace(editor.document.uri, lineRange, '');
-
-            await vscode.workspace.applyEdit(edit);
-
-            const newPosition = new vscode.Position(position.line, 0);
-            editor.selection = new vscode.Selection(newPosition, newPosition);
-
-            return false; // VS Codeの通常動作に任せる
-        }
-
-        // 新しいリストアイテムの生成
-        let newLineContent = '';
-
-        switch (patternType) {
-            case 'checkbox': {
-                const marker = matchedPattern[2];
-                newLineContent = `${indent}${marker} [ ] `;
-                break;
-            }
-
-            case 'unordered': {
-                const listMarker = matchedPattern[2];
-                newLineContent = `${indent}${listMarker} `;
-                break;
-            }
-
-            case 'ordered': {
-                const number = parseInt(matchedPattern[2], 10);
-                newLineContent = `${indent}${number + 1}. `;
-                break;
-            }
-        }
-
-        // 新しい行を挿入
-        await editor.edit(editBuilder => {
-            editBuilder.insert(
-                new vscode.Position(position.line + 1, 0),
-                '\n' + newLineContent
-            );
-        });
-
-        // カーソルを新しい行に移動
-        const newPosition = new vscode.Position(
-            position.line + 1,
-            newLineContent.length
-        );
-        editor.selection = new vscode.Selection(newPosition, newPosition);
-
-        return true;
-    }
-
-    private detectListPattern(text: string): {
-        patternType: 'checkbox' | 'unordered' | 'ordered' | null;
-        matchedPattern: RegExpMatchArray | null;
-    } {
-        let match = text.match(this.listPatterns.checkbox);
-        if (match) {
-            return { patternType: 'checkbox', matchedPattern: match };
-        }
-
-        match = text.match(this.listPatterns.unordered);
-        if (match) {
-            return { patternType: 'unordered', matchedPattern: match };
-        }
-
-        match = text.match(this.listPatterns.ordered);
-        if (match) {
-            return { patternType: 'ordered', matchedPattern: match };
-        }
-
-        return { patternType: null, matchedPattern: null };
-    }
-
-    private getContentAfterMarker(
-        patternType: 'checkbox' | 'unordered' | 'ordered',
-        match: RegExpMatchArray
-    ): string {
-        switch (patternType) {
-            case 'checkbox':
-                return match[4];
-            case 'unordered':
-                return match[3];
-            case 'ordered':
-                return match[3];
-        }
-    }
-}
-```
-
-### 17.5 設定項目の追加
-
-#### 17.5.1 新規設定
+#### 17.4.1 新規設定
 ```json
 {
-  "obsd.listContinuationEnabled": {
-    "type": "boolean",
-    "default": true,
-    "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
-  },
   "obsd.searchSubdirectories": {
     "type": "boolean",
     "default": true,
@@ -2070,20 +1943,15 @@ export class ListContinuationProvider {
 }
 ```
 
-#### 17.5.2 ConfigurationManager拡張
+#### 17.4.2 ConfigurationManager拡張
 ```typescript
 // src/managers/ConfigurationManager.ts に追加
 export interface ObsdConfiguration {
     // 既存フィールド...
-    readonly listContinuationEnabled: boolean;
     readonly searchSubdirectories: boolean;
 }
 
 export class ConfigurationManager {
-    getListContinuationEnabled(): boolean {
-        return this.config.get<boolean>('listContinuationEnabled', true);
-    }
-
     getSearchSubdirectories(): boolean {
         return this.config.get<boolean>('searchSubdirectories', true);
     }
@@ -2091,14 +1959,13 @@ export class ConfigurationManager {
     getConfiguration(): ObsdConfiguration {
         return {
             // 既存フィールド...
-            listContinuationEnabled: this.getListContinuationEnabled(),
             searchSubdirectories: this.getSearchSubdirectories()
         };
     }
 }
 ```
 
-### 17.6 テスト設計の改善
+### 17.5 テスト設計の改善
 
 #### 17.6.1 モックドキュメントヘルパー
 ```typescript
@@ -2213,19 +2080,8 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
-    // リスト自動継続
-    const listProvider = new ListContinuationProvider(configManager);
-    context.subscriptions.push(
-        vscode.commands.registerCommand('obsd.handleEnterKey', async () => {
-            const editor = vscode.window.activeTextEditor;
-            if (editor) {
-                const handled = await listProvider.handleEnterKey(editor);
-                if (!handled) {
-                    vscode.commands.executeCommand('default:type', { text: '\n' });
-                }
-            }
-        })
-    );
+    // リスト自動継続機能は廃止（ADR-017）
+    // VSCode標準のMarkdown機能を使用
 
     // 条件付きサブディレクトリ検索
     const openOrCreateCommand = vscode.commands.registerCommand(
@@ -2274,8 +2130,8 @@ export function activate(context: vscode.ExtensionContext) {
 ```json
 {
   "activationEvents": [
-    "onLanguage:markdown",
-    "onCommand:obsd.handleEnterKey"
+    "onLanguage:markdown"
+    // obsd.handleEnterKeyは廃止（ADR-017）
   ]
 }
 ```
