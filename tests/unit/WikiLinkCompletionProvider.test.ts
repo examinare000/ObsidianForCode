@@ -92,8 +92,7 @@ describe('WikiLinkCompletionProvider', () => {
             get: (key: string, defaultValue?: any) => {
                 const configs: any = {
                     'vaultRoot': 'notes',
-                    'noteExtension': '.md',
-                    'listContinuationEnabled': true
+                    'noteExtension': '.md'
                 };
                 return configs[key] || defaultValue;
             },
@@ -124,9 +123,9 @@ describe('WikiLinkCompletionProvider', () => {
             ];
             findNotesByPrefixStub.resolves(mockNotes);
 
-            const lines = ['Some text [[Fi'];
+            const lines = ['Some text [[Fi]]'];
             const doc = createMockDocument(lines);
-            const position = new vscode.Position(0, 13); // After [[Fi
+            const position = new vscode.Position(0, 14); // After [[Fi, before ]]
             const token = new vscode.CancellationTokenSource().token;
             const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
 
@@ -170,9 +169,9 @@ describe('WikiLinkCompletionProvider', () => {
             ];
             findNotesByPrefixStub.resolves(mockNotes);
 
-            const lines = ['Reference to [[Proj'];
+            const lines = ['Reference to [[Proj]]'];
             const doc = createMockDocument(lines);
-            const position = new vscode.Position(0, 19); // After [[Proj
+            const position = new vscode.Position(0, 19); // After [[Proj, before ]]
             const token = new vscode.CancellationTokenSource().token;
             const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
 
@@ -193,9 +192,9 @@ describe('WikiLinkCompletionProvider', () => {
             ];
             findNotesByPrefixStub.resolves(mockNotes);
 
-            const lines = ['[[Test'];
+            const lines = ['[[Test]]'];
             const doc = createMockDocument(lines);
-            const position = new vscode.Position(0, 6);
+            const position = new vscode.Position(0, 6); // After [[Test, before ]]
             const token = new vscode.CancellationTokenSource().token;
             const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
 
@@ -253,9 +252,9 @@ describe('WikiLinkCompletionProvider', () => {
         it('should return empty array when no notes match', async () => {
             findNotesByPrefixStub.resolves([]);
 
-            const lines = ['[[NonExistent'];
+            const lines = ['[[NonExistent]]'];
             const doc = createMockDocument(lines);
-            const position = new vscode.Position(0, 13);
+            const position = new vscode.Position(0, 13); // After [[NonExistent, before ]]
             const token = new vscode.CancellationTokenSource().token;
             const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
 
@@ -271,9 +270,9 @@ describe('WikiLinkCompletionProvider', () => {
             ];
             findNotesByPrefixStub.resolves(mockNotes);
 
-            const lines = ['[[Imp'];
+            const lines = ['[[Imp]]'];
             const doc = createMockDocument(lines);
-            const position = new vscode.Position(0, 5);
+            const position = new vscode.Position(0, 5); // After [[Imp, before ]]
             const token = new vscode.CancellationTokenSource().token;
             const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
 
@@ -297,6 +296,116 @@ describe('WikiLinkCompletionProvider', () => {
             const result = provider.resolveCompletionItem!(item, token);
 
             expect(result).to.equal(item);
+        });
+    });
+
+    describe('新しい動作要件テスト', () => {
+        describe('カーソル位置の検証', () => {
+            it('should provide completion only when cursor is immediately before ]]', async () => {
+                const mockNotes = [
+                    { title: 'Test Note', uri: vscode.Uri.file('/test/Test Note.md'), relativePath: 'Test Note.md' }
+                ];
+                findNotesByPrefixStub.resolves(mockNotes);
+
+                const lines = ['Text [[Te]]'];
+                const doc = createMockDocument(lines);
+                const position = new vscode.Position(0, 9); // Cursor between 'Te' and ']]'
+                const token = new vscode.CancellationTokenSource().token;
+                const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+                const result = await provider.provideCompletionItems(doc, position, token, context);
+
+                expect(result).to.not.be.null;
+                expect(result).to.have.lengthOf(1);
+            });
+
+            it('should return null when cursor is not immediately before ]]', async () => {
+                const lines = ['Text [[Test]] more'];
+                const doc = createMockDocument(lines);
+                const position = new vscode.Position(0, 13); // After ]]
+                const token = new vscode.CancellationTokenSource().token;
+                const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+                const result = await provider.provideCompletionItems(doc, position, token, context);
+
+                expect(result).to.be.null;
+            });
+        });
+
+        describe('入力済み文字列の検証', () => {
+            it('should provide completion when at least 1 character exists inside [[]]', async () => {
+                const mockNotes = [
+                    { title: 'A', uri: vscode.Uri.file('/test/A.md'), relativePath: 'A.md' }
+                ];
+                findNotesByPrefixStub.resolves(mockNotes);
+
+                const lines = ['[[A]]'];
+                const doc = createMockDocument(lines);
+                const position = new vscode.Position(0, 3); // After [[A
+                const token = new vscode.CancellationTokenSource().token;
+                const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+                const result = await provider.provideCompletionItems(doc, position, token, context);
+
+                expect(result).to.not.be.null;
+                expect(result!.length).to.be.greaterThan(0);
+            });
+
+            it('should return null when no characters exist inside [[]]', async () => {
+                const lines = ['[[]]'];
+                const doc = createMockDocument(lines);
+                const position = new vscode.Position(0, 2); // Right after [[
+                const token = new vscode.CancellationTokenSource().token;
+                const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+                const result = await provider.provideCompletionItems(doc, position, token, context);
+
+                expect(result).to.be.null;
+            });
+        });
+
+        describe('前方一致検索', () => {
+            it('should filter notes by prefix match', async () => {
+                const mockNotes = [
+                    { title: 'Project A', uri: vscode.Uri.file('/test/Project A.md'), relativePath: 'Project A.md' },
+                    { title: 'Project B', uri: vscode.Uri.file('/test/Project B.md'), relativePath: 'Project B.md' }
+                ];
+                findNotesByPrefixStub.resolves(mockNotes);
+
+                const lines = ['[[Proj]]'];
+                const doc = createMockDocument(lines);
+                const position = new vscode.Position(0, 6); // After [[Proj
+                const token = new vscode.CancellationTokenSource().token;
+                const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+                const result = await provider.provideCompletionItems(doc, position, token, context);
+
+                expect(result).to.not.be.null;
+                expect(result).to.have.lengthOf(2);
+                expect(findNotesByPrefixStub.calledWith('Proj')).to.be.true;
+            });
+        });
+
+        describe('サブフォルダ内ファイル検索', () => {
+            it('should find notes in subdirectories', async () => {
+                const mockNotes = [
+                    { title: 'SubNote', uri: vscode.Uri.file('/test/notes/subfolder/SubNote.md'), relativePath: 'subfolder/SubNote.md' }
+                ];
+                findNotesByPrefixStub.resolves(mockNotes);
+
+                const lines = ['[[Sub]]'];
+                const doc = createMockDocument(lines);
+                const position = new vscode.Position(0, 5); // After [[Sub
+                const token = new vscode.CancellationTokenSource().token;
+                const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+                const result = await provider.provideCompletionItems(doc, position, token, context);
+
+                expect(result).to.not.be.null;
+                expect(result).to.have.lengthOf(1);
+                expect(result![0].label).to.equal('SubNote');
+                expect(result![0].detail).to.equal('subfolder/SubNote.md');
+            });
         });
     });
 });

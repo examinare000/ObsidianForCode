@@ -7,6 +7,11 @@ interface MockExtensionContext {
     subscriptions: any[];
 }
 
+interface Position {
+    line: number;
+    character: number;
+}
+
 // Track mock state
 let mockActiveEditor: any | undefined;
 let mockContext: string | undefined;
