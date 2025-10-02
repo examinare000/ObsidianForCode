@@ -49,6 +49,7 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         // Check if we're inside WikiLink brackets
         const lineText = document.lineAt(position.line).text;
         const textBeforeCursor = lineText.substring(0, position.character);
+        const textAfterCursor = lineText.substring(position.character);
 
         // Find the last [[ before cursor
         const lastOpenBrackets = textBeforeCursor.lastIndexOf('[[');
@@ -56,17 +57,18 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             return null;
         }
 
-        // Check if there's a closing ]] after the opening [[
-        const textAfterOpen = lineText.substring(lastOpenBrackets);
-        const closeBrackets = textAfterOpen.indexOf(']]');
-
-        // We're not inside WikiLink if ]] appears before cursor position
-        if (closeBrackets !== -1 && lastOpenBrackets + closeBrackets < position.character) {
+        // NEW REQUIREMENT: カーソルの右に]] が存在するか確認
+        if (!textAfterCursor.startsWith(']]')) {
             return null;
         }
 
         // Extract the prefix typed so far
         const prefix = textBeforeCursor.substring(lastOpenBrackets + 2);
+
+        // NEW REQUIREMENT: [[]]内に1文字以上の入力があるか確認
+        if (prefix.length === 0) {
+            return null;
+        }
 
         // Get workspace folder for the current document
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -108,15 +110,12 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             // Set sort order (exact matches first)
             item.sortText = String(index).padStart(3, '0');
 
-            // Preserve the closing brackets if they exist
-            const textAfterCursor = lineText.substring(position.character);
-            if (textAfterCursor.startsWith(']]')) {
-                // If ]] already exists, just replace the text inside
-                item.range = new vscode.Range(
-                    new vscode.Position(position.line, lastOpenBrackets + 2),
-                    new vscode.Position(position.line, position.character)
-                );
-            }
+            // Since ]] always exists at this point (due to new requirement check),
+            // just replace the text inside [[]]
+            item.range = new vscode.Range(
+                new vscode.Position(position.line, lastOpenBrackets + 2),
+                new vscode.Position(position.line, position.character)
+            );
 
             return item;
         });
