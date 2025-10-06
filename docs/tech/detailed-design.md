@@ -2,8 +2,8 @@
 
 > **更新情報**: このドキュメントは v0.1.0 時点の初期設計を記録しています。
 > 最新の実装状況は `development-status.md` を参照してください。
-> 現在バージョン: v0.4.5-dev (2025-10-01)
-> テスト品質: 215/225 成功 (95.6%)
+> 現在バージョン: v0.4.7-dev (2025-10-04)
+> テスト品質: 221/231 成功 (95.7%)
 
 ## 1. アーキテクチャ概要
 
@@ -12,7 +12,7 @@
 ┌──────────────────────────────────────────────────────┐
 │                 VS Code Host                         │
 ├──────────────────────────────────────────────────────┤
-│  ObsidianForCode Extension (v0.4.4)                  │
+│  ObsidianForCode Extension (v0.4.7-dev)              │
 │  ┌──────────────┐  ┌────────────────────────────┐   │
 │  │  Extension   │  │   Providers                │   │
 │  │   Host       │←→│  - DocumentLink            │   │
@@ -286,6 +286,8 @@ export class WikiLinkProvider implements vscode.DocumentLinkProvider {
     }
 }
 ```
+
+> **2025-10-04 更新**: 実装は `resolveLinkTarget` を介して `NoteFinder.findNoteByTitle` を呼び出し、サブディレクトリ内に既存ノートがあればその URI を優先する。見つからない場合のみ `vaultRoot` を基準にパスを生成する。
 
 ### 3.2 WikiLink処理ロジック
 
@@ -880,8 +882,8 @@ private isPositionInWikiLink(document: vscode.TextDocument, position: vscode.Pos
     while ((match = wikiLinkRegex.exec(text)) !== null) {
         const linkStart = match.index;
         const linkEnd = match.index + match[0].length;
-        // [[ の直後から ]] の直前まで（内側）にある場合のみtrue
-        if (offset >= linkStart + 2 && offset <= linkEnd - 3) {
+        // [[ の直後から最初の閉じ括弧までをWikiLink内部として扱う
+        if (offset >= linkStart + 2 && offset <= linkEnd - 1) {
             return true;
         }
     }
@@ -1922,6 +1924,8 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
     }
 }
 ```
+
+> **2025-10-04 更新**: 現行実装では `#` と `|` をセクション区切りとして検出し、WikiLink本体のみをプレフィックス検索対象にする。別名部分にフォーカスがある場合は補完を停止し、置換レンジも区切り文字直前までに限定して誤上書きを防ぐ。
 
 ### 17.4 ListContinuationProvider設計
 

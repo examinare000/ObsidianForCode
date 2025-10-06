@@ -21,6 +21,7 @@
 | [013](./013-nodejs-path-isabsolute-adoption.md) | Node.js path.isAbsolute Adoption | Accepted | 2025-09-22 | クロスプラットフォーム対応の絶対パス判定 |
 | [014](./014-enhanced-note-features-quality-improvements.md) | Enhanced Note Features Quality Improvements | Accepted | 2025-09-22 | WikiLink補完・リスト継続機能の品質向上 |
 | [015](./ADR-015-test-quality-improvements.md) | Test Quality Improvements | Accepted | 2025-10-01 | テスト成功率95.6%達成とグローバルモック統合 |
+| [016](./016-wikilink-interaction-refinement.md) | WikiLink Interaction Refinement | Accepted | 2025-10-04 | WikiLink境界判定・リンク解決・補完の操作性改善 |
 
 ## ADR作成ガイドライン
 
