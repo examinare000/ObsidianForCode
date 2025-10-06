@@ -101,15 +101,15 @@ describe('WikiLinkDocumentLinkProvider', () => {
     });
     
     describe('WikiLinkの検出', () => {
-        it('シンプルなWikiLinkを検出できる', () => {
-            const links = provider.provideDocumentLinks(mockDocument);
+        it('シンプルなWikiLinkを検出できる', async () => {
+            const links = await provider.provideDocumentLinks(mockDocument);
             
             expect(links).to.have.length(3);
             expect(links[0].target?.path).to.include('Simple Link');
         });
         
-        it('別名付きWikiLinkを検出できる', () => {
-            const links = provider.provideDocumentLinks(mockDocument);
+        it('別名付きWikiLinkを検出できる', async () => {
+            const links = await provider.provideDocumentLinks(mockDocument);
             
             const aliasLink = links.find((link: any) => 
                 mockDocument.getText().substring(
@@ -122,8 +122,8 @@ describe('WikiLinkDocumentLinkProvider', () => {
             expect(aliasLink?.target?.path).to.include('Another');
         });
         
-        it('見出し付きWikiLinkを検出できる', () => {
-            const links = provider.provideDocumentLinks(mockDocument);
+        it('見出し付きWikiLinkを検出できる', async () => {
+            const links = await provider.provideDocumentLinks(mockDocument);
             
             const headingLink = links.find((link: any) => 
                 mockDocument.getText().substring(
@@ -138,14 +138,14 @@ describe('WikiLinkDocumentLinkProvider', () => {
     });
     
     describe('リンク範囲の計算', () => {
-        it('WikiLinkの正確な位置を特定できる', () => {
+        it('WikiLinkの正確な位置を特定できる', async () => {
             const simpleDocument = new MockTextDocument(
                 MockUri.file('/test/simple.md'),
                 'markdown',
                 '[[Test Link]]'
             );
             
-            const links = provider.provideDocumentLinks(simpleDocument);
+            const links = await provider.provideDocumentLinks(simpleDocument);
             expect(links).to.have.length(1);
             
             const link = links[0];
@@ -157,14 +157,14 @@ describe('WikiLinkDocumentLinkProvider', () => {
             expect(linkText).to.equal('[[Test Link]]');
         });
         
-        it('複数行にわたる文書で正確な位置を計算できる', () => {
+        it('複数行にわたる文書で正確な位置を計算できる', async () => {
             const multiLineDocument = new MockTextDocument(
                 MockUri.file('/test/multiline.md'),
                 'markdown',
                 'Line 1\nLine 2 with [[Link]] here\nLine 3'
             );
             
-            const links = provider.provideDocumentLinks(multiLineDocument);
+            const links = await provider.provideDocumentLinks(multiLineDocument);
             expect(links).to.have.length(1);
             
             const link = links[0];
@@ -174,7 +174,7 @@ describe('WikiLinkDocumentLinkProvider', () => {
     });
     
     describe('設定との統合', () => {
-        it('slugStrategyを適用してターゲットURIを生成する', () => {
+        it('slugStrategyを適用してターゲットURIを生成する', async () => {
             // Kebab-case設定を持つモックConfigurationManager
             const mockConfig = {
                 getSlugStrategy: () => 'kebab-case' as const,
@@ -193,7 +193,7 @@ describe('WikiLinkDocumentLinkProvider', () => {
                 '[[My Test Page]]'
             );
             
-            const links = kebabProvider.provideDocumentLinks(kebabDocument);
+            const links = await kebabProvider.provideDocumentLinks(kebabDocument);
             expect(links).to.have.length(1);
             
             // kebab-case変換が適用されることを確認
@@ -201,7 +201,7 @@ describe('WikiLinkDocumentLinkProvider', () => {
             expect(link.target?.path).to.include('my-test-page');
         });
         
-        it('カスタム拡張子を使用してファイルパスを生成する', () => {
+        it('カスタム拡張子を使用してファイルパスを生成する', async () => {
             // .txt拡張子設定を持つモックConfigurationManager
             const mockConfig = {
                 getSlugStrategy: () => 'passthrough' as const,
@@ -220,34 +220,60 @@ describe('WikiLinkDocumentLinkProvider', () => {
                 '[[Test File]]'
             );
             
-            const links = customProvider.provideDocumentLinks(customExtDocument);
+            const links = await customProvider.provideDocumentLinks(customExtDocument);
             expect(links).to.have.length(1);
             
             const link = links[0];
             expect(link.target?.path).to.include('.txt');
         });
+
+        it('サブディレクトリ内の既存ノートURIを優先して使用する', async () => {
+            const mockConfig = {
+                getSlugStrategy: () => 'passthrough' as const,
+                getNoteExtension: () => '.md',
+                getVaultRoot: () => '/test/vault'
+            };
+
+            const resolvingProvider = new WikiLinkDocumentLinkProvider(mockConfig as any);
+            resolvingProvider.createRange = (start: any, end: any) => new MockRange(start, end);
+            resolvingProvider.createUri = (path: string) => MockUri.file(path);
+            resolvingProvider.createDocumentLink = (range: any, target?: any) => new MockDocumentLink(range, target);
+
+            (resolvingProvider as any).resolveLinkTarget = async () => MockUri.file('/test/vault/notes/sub/Child Note.md');
+
+            const doc = new MockTextDocument(
+                MockUri.file('/test/source.md'),
+                'markdown',
+                '[[Child Note]]'
+            );
+
+            const links = await resolvingProvider.provideDocumentLinks(doc);
+
+            expect(links).to.have.length(1);
+            expect(links[0].target?.path).to.equal('/test/vault/notes/sub/Child Note.md');
+        });
     });
     
     describe('エラーハンドリング', () => {
-        it('無効なWikiLink形式を無視する', () => {
+        it('無効なWikiLink形式を無視する', async () => {
             const invalidDocument = new MockTextDocument(
                 MockUri.file('/test/invalid.md'),
                 'markdown',
                 'Not a link: [Regular Link](http://example.com) and [[]]'
             );
             
-            const links = provider.provideDocumentLinks(invalidDocument);
+            const links = await provider.provideDocumentLinks(invalidDocument);
             expect(links).to.have.length(0);
         });
         
-        it('空の文書を処理できる', () => {
+        it('空の文書を処理できる', async () => {
             const emptyDocument = new MockTextDocument(
                 MockUri.file('/test/empty.md'),
                 'markdown',
                 ''
             );
             
-            const links = provider.provideDocumentLinks(emptyDocument);
+            const links = await provider.provideDocumentLinks(emptyDocument);
             expect(links).to.have.length(0);
         });
     });

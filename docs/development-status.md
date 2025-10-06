@@ -6,15 +6,25 @@
 ## 開発完了状況
 
 ### 📊 開発統計
-- **開発期間**: 2025-09-09 ～ 2025-10-03 (継続開発)
+- **開発期間**: 2025-09-09 ～ 2025-10-04 (継続開発)
 - **開発手法**: Test-Driven Development (TDD) - t-wada方式
-- **現在バージョン**: v0.4.6
-- **テスト数**: 225個 (215個パス、10個スキップ)
-- **テスト成功率**: 95.6%
+- **現在バージョン**: v0.4.7
+- **テスト数**: 231個 (221個パス、10個スキップ)
+- **テスト成功率**: 95.7%
 - **コンポーネント数**: 12個
-- **ADR記録**: 15件
+- **ADR記録**: 16件
 
 ### ✅ 実装完了機能
+
+#### v0.4.7 WikiLink操作性改善 (2025-10-04)
+- ✅ **キーバインド境界検出の補強**
+  - `obsd.inWikiLink` が `]]` 上でも true を維持し、Ctrl/Cmd+Enter が確実に発火
+- ✅ **リンク解決の精度向上**
+  - DocumentLinkProvider が `NoteFinder` を介してサブディレクトリの既存ノートURIを優先
+- ✅ **WikiLink補完の安定化**
+  - `#`/`|` を含むリンクで適切なプレフィックス切り出しとレンジ制御を実施
+- ✅ **テスト強化**
+  - 境界ケースを対象とした 6 件のユニットテストを追加し回帰防止
 
 #### v0.4.6 コンパイルエラー修正 (2025-10-03)
 - ✅ **TypeScriptコンパイルエラー解消**
@@ -142,6 +152,8 @@
 12. **ADR-012**: Extension Activation Fix
 13. **ADR-013**: Node.js path.isAbsolute Adoption
 14. **ADR-014**: Enhanced Note Features Quality Improvements
+15. **ADR-015**: Test Quality Improvements
+16. **ADR-016**: WikiLink Interaction Refinement
 
 #### 技術文書
 - ✅ **README.md** - プロジェクト概要・使用方法
@@ -155,24 +167,20 @@
 - 全コンポーネントでTDD適用
 - テストファースト開発による高品質担保
 
-### テスト分類
-```
-DateTimeFormatter: 24 tests (24 passing)
-WikiLinkProcessor: 10 tests (10 passing)
-WikiLinkDocumentLinkProvider: 9 tests (9 passing)
-CommandHandler: 17 tests (17 passing)
-ConfigurationManager: 16 tests (11 passing, 5 skipped)
-NoteFinder: 20 tests (20 passing)
-WikiLinkCompletionProvider: 10 tests (10 passing)
-ListContinuationProvider: 16 tests (16 passing)
-DailyNoteManager: 17 tests (12 passing, 5 skipped)
-WikiLinkContextProvider: 8 tests (8 passing)
-PathUtil: 27 tests (24 passing, 3 skipped)
-その他統合テスト: 51 tests (50 passing, 1 skipped)
-──────────────────────────────
-Total: 225 tests (215 passing, 10 skipped)
-成功率: 95.6%
-```
+### テスト分類（主要コンポーネント）
+- **DateTimeFormatter**: 24 ケース（全パス）
+- **WikiLinkProcessor**: 10 ケース（全パス）
+- **WikiLinkDocumentLinkProvider**: 14 ケース（全パス）
+- **CommandHandler**: 20 ケース（全パス）
+- **ConfigurationManager**: 16 ケース（11 パス / 5 スキップ）
+- **NoteFinder**: 20 ケース（全パス）
+- **WikiLinkCompletionProvider**: 13 ケース（全パス）
+- **ListContinuationProvider**: 16 ケース（全パス）
+- **DailyNoteManager**: 20 ケース（19 パス / 1 スキップ）
+- **WikiLinkContextProvider**: 6 ケース（全パス）
+- **PathUtil**: 27 ケース（24 パス / 3 スキップ）
+- **統合テスト群**: 45 ケース（44 パス / 1 スキップ）
+- **総計**: 231 ケース（221 パス / 10 スキップ）
 
 ### 開発インフラ強化
 - ✅ **Git戦略**: GitFlowベースのブランチ戦略確立
@@ -229,7 +237,7 @@ Total: 225 tests (215 passing, 10 skipped)
 
 ---
 
-**Status: ✅ HIGH QUALITY - v0.4.6**
-**Date: 2025-10-03**
-**Quality: 215/225 tests passing (95.6%)**
-**Branch: develop**
+**Status: ✅ HIGH QUALITY - v0.4.7**
+**Date: 2025-10-04**
+**Quality: 221/231 tests passing (95.7%)**
+**Branch: main**

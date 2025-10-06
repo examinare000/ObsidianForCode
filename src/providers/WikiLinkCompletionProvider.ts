@@ -65,8 +65,44 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             return null;
         }
 
-        // Extract the prefix typed so far
-        const prefix = textBeforeCursor.substring(lastOpenBrackets + 2);
+        const linkContentStart = lastOpenBrackets + 2;
+        const cursorOffsetInLink = position.character - linkContentStart;
+        if (cursorOffsetInLink < 0) {
+            return null;
+        }
+
+        const textInsideBeforeCursor = textBeforeCursor.substring(linkContentStart);
+        const textInsideFull = lineText.substring(linkContentStart);
+
+        const aliasIndexBeforeCursor = textInsideBeforeCursor.indexOf('|');
+        const headingIndexBeforeCursor = textInsideBeforeCursor.indexOf('#');
+        const aliasIndexInLink = textInsideFull.indexOf('|');
+        const headingIndexInLink = textInsideFull.indexOf('#');
+
+        if (aliasIndexInLink !== -1 && cursorOffsetInLink > aliasIndexInLink) {
+            // Cursor is within alias portion; do not provide completions
+            return null;
+        }
+
+        let prefixEndIndex = cursorOffsetInLink;
+        if (aliasIndexBeforeCursor >= 0) {
+            prefixEndIndex = Math.min(prefixEndIndex, aliasIndexBeforeCursor);
+        }
+        if (headingIndexBeforeCursor >= 0) {
+            prefixEndIndex = Math.min(prefixEndIndex, headingIndexBeforeCursor);
+        }
+
+        const rawPrefix = textInsideBeforeCursor.substring(0, Math.max(0, prefixEndIndex));
+        const searchPrefix = rawPrefix.trim();
+
+        let replacementEnd = position.character;
+        if (aliasIndexInLink >= 0) {
+            replacementEnd = Math.min(replacementEnd, linkContentStart + aliasIndexInLink);
+        } else if (headingIndexInLink >= 0) {
+            replacementEnd = Math.min(replacementEnd, linkContentStart + headingIndexInLink);
+        }
+
+        replacementEnd = Math.max(replacementEnd, linkContentStart);
 
         // Get workspace folder for the current document
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -80,7 +116,7 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
 
         // Find notes matching the prefix
         const notes = await NoteFinder.findNotesByPrefix(
-            prefix,
+            searchPrefix,
             workspaceFolder,
             vaultRoot,
             extension,
@@ -108,15 +144,11 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
             // Set sort order (exact matches first)
             item.sortText = String(index).padStart(3, '0');
 
-            // Preserve the closing brackets if they exist
-            const textAfterCursor = lineText.substring(position.character);
-            if (textAfterCursor.startsWith(']]')) {
-                // If ]] already exists, just replace the text inside
-                item.range = new vscode.Range(
-                    new vscode.Position(position.line, lastOpenBrackets + 2),
-                    new vscode.Position(position.line, position.character)
-                );
-            }
+            const targetRange = new vscode.Range(
+                new vscode.Position(position.line, linkContentStart),
+                new vscode.Position(position.line, replacementEnd)
+            );
+            item.range = targetRange;
 
             return item;
         });
