@@ -205,26 +205,27 @@ export class CommandHandler {
         const text = document.getText();
         const offset = document.offsetAt(position);
         
-        // カーソル位置周辺でWikiLinkを検索
-        const beforeText = text.substring(0, offset);
-        const afterText = text.substring(offset);
-        
-        // 最後の[[ を探す
-        const lastOpenBracket = beforeText.lastIndexOf('[[');
+        // 最後の[[ を探す（カーソル位置自体が閉じ括弧でも検出できるように検索）
+        const lastOpenBracket = text.lastIndexOf('[[', offset);
         if (lastOpenBracket === -1) {
             return '';
         }
-        
-        // 次の]] を探す
-        const nextCloseBracket = afterText.indexOf(']]');
-        if (nextCloseBracket === -1) {
+
+        // 対応する]] を探す
+        const closingIndex = text.indexOf(']]', lastOpenBracket);
+        if (closingIndex === -1) {
             return '';
         }
         
+        const linkStartContent = lastOpenBracket + 2;
+        const linkEndInclusive = closingIndex + 1; // 2つ目の ']' までを含める
+
+        if (offset < linkStartContent || offset > linkEndInclusive) {
+            return '';
+        }
+
         // WikiLink全体を取得
-        const wikiLinkStart = lastOpenBracket;
-        const wikiLinkEnd = offset + nextCloseBracket + 2;
-        const wikiLinkFull = text.substring(wikiLinkStart, wikiLinkEnd);
+        const wikiLinkFull = text.substring(lastOpenBracket, closingIndex + 2);
         
         // [[]] を除去してリンクテキストを抽出
         const match = wikiLinkFull.match(/^\[\[([^\]]+)\]\]$/);

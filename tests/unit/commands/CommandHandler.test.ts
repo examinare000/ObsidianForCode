@@ -250,5 +250,12 @@ describe('CommandHandler', () => {
             linkText = commandHandler.getWikiLinkAtPosition(multiLinkDocument, position);
             expect(linkText).to.equal('Link Two');
         });
+
+        it('WikiLink終端の閉じ括弧でもリンクテキストを取得できる', () => {
+            const position = { line: 0, character: 22 };
+            const linkText = commandHandler.getWikiLinkAtPosition(mockDocument, position);
+
+            expect(linkText).to.equal('Test Link');
+        });
     });
 });

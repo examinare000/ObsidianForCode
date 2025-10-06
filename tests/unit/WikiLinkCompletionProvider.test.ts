@@ -287,6 +287,63 @@ describe('WikiLinkCompletionProvider', () => {
             expect(docString).to.include('Important Note');
             expect(docString).to.include('subfolder/Important Note.md');
         });
+
+        it('should search using text before heading separator and preserve heading segment', async () => {
+            const mockNotes = [
+                { title: 'My Note', uri: vscode.Uri.file('/vault/My Note.md'), relativePath: 'My Note.md' }
+            ];
+            findNotesByPrefixStub.resolves(mockNotes);
+
+            const line = '[[My Note#Heading';
+            const doc = createMockDocument([line]);
+            const position = new vscode.Position(0, line.length);
+            const token = new vscode.CancellationTokenSource().token;
+            const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+            const result = await provider.provideCompletionItems(doc, position, token, context);
+
+            expect(result).to.not.be.null;
+            expect(result).to.have.lengthOf(1);
+            expect(findNotesByPrefixStub.firstCall.args[0]).to.equal('My Note');
+
+            const range = result![0].range as vscode.Range;
+            expect(range.start.character).to.equal(2); // after [[
+            expect(range.end.character).to.equal(line.indexOf('#'));
+        });
+
+        it('should limit replacement to text before alias separator', async () => {
+            const mockNotes = [
+                { title: 'Project Plan', uri: vscode.Uri.file('/vault/Project Plan.md'), relativePath: 'Project Plan.md' }
+            ];
+            findNotesByPrefixStub.resolves(mockNotes);
+
+            const line = '[[Project|Display';
+            const doc = createMockDocument([line]);
+            const position = new vscode.Position(0, line.indexOf('|'));
+            const token = new vscode.CancellationTokenSource().token;
+            const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+            const result = await provider.provideCompletionItems(doc, position, token, context);
+
+            expect(result).to.not.be.null;
+            expect(findNotesByPrefixStub.firstCall.args[0]).to.equal('Project');
+
+            const range = result![0].range as vscode.Range;
+            expect(range.end.character).to.equal(line.indexOf('|'));
+        });
+
+        it('should return null when caret is inside alias segment', async () => {
+            const line = '[[Project|Display';
+            const doc = createMockDocument([line]);
+            const position = new vscode.Position(0, line.length);
+            const token = new vscode.CancellationTokenSource().token;
+            const context: vscode.CompletionContext = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
+
+            const result = await provider.provideCompletionItems(doc, position, token, context);
+
+            expect(result).to.be.null;
+            expect(findNotesByPrefixStub.called).to.be.false;
+        });
     });
 
     describe('resolveCompletionItem', () => {

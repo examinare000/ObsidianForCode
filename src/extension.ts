@@ -240,13 +240,12 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
      * @returns Array of document links found in the document
      * @throws {Error} When link processing fails
      */
-    provideDocumentLinks(document: vscode.TextDocument): vscode.DocumentLink[] {
+    async provideDocumentLinks(document: vscode.TextDocument): Promise<vscode.DocumentLink[]> {
         if (document.languageId !== 'markdown') {
             return [];
         }
 
-        // ワークスペースフォルダーの事前チェック
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri) || vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             return [];
         }
@@ -254,6 +253,9 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
         const links: vscode.DocumentLink[] = [];
         const text = document.getText();
         const wikiLinkRegex = /\[\[([^\]]+)\]\]/g;
+        const extension = this.configManager.getNoteExtension();
+        const vaultRoot = this.configManager.getVaultRoot();
+        const searchSubdirectories = this.configManager.getSearchSubdirectories();
         
         let match;
         while ((match = wikiLinkRegex.exec(text)) !== null) {
@@ -268,18 +270,33 @@ class WikiLinkDocumentLinkProvider implements vscode.DocumentLinkProvider {
                 let fileName = this.wikiLinkProcessor.transformFileName(parsedLink.pageName);
                 fileName = PathUtil.sanitizeFileName(fileName);
                 
-                const extension = this.configManager.getNoteExtension();
-                const vaultRoot = this.configManager.getVaultRoot();
+                let uri: vscode.Uri | undefined;
 
-                let uri: vscode.Uri;
+                if (searchSubdirectories) {
+                    try {
+                        const foundFile = await NoteFinder.findNoteByTitle(
+                            fileName,
+                            workspaceFolder,
+                            vaultRoot,
+                            extension
+                        );
 
-                // PathUtilを使用した安全なURI作成
-                uri = PathUtil.createSafeUri(
-                    vaultRoot,
-                    fileName,
-                    extension,
-                    workspaceFolder
-                );
+                        if (foundFile) {
+                            uri = foundFile.uri;
+                        }
+                    } catch (error) {
+                        console.warn('Failed to resolve WikiLink target:', error);
+                    }
+                }
+
+                if (!uri) {
+                    uri = PathUtil.createSafeUri(
+                        vaultRoot,
+                        fileName,
+                        extension,
+                        workspaceFolder
+                    );
+                }
                 
                 const documentLink = new vscode.DocumentLink(range, uri);
                 links.push(documentLink);
@@ -463,22 +480,24 @@ function getWikiLinkAtPosition(document: vscode.TextDocument, position: vscode.P
     const text = document.getText();
     const offset = document.offsetAt(position);
     
-    const beforeText = text.substring(0, offset);
-    const afterText = text.substring(offset);
-    
-    const lastOpenBracket = beforeText.lastIndexOf('[[');
+    const lastOpenBracket = text.lastIndexOf('[[', offset);
     if (lastOpenBracket === -1) {
         return '';
     }
-    
-    const nextCloseBracket = afterText.indexOf(']]');
-    if (nextCloseBracket === -1) {
+
+    const closingIndex = text.indexOf(']]', lastOpenBracket);
+    if (closingIndex === -1) {
         return '';
     }
-    
-    const wikiLinkStart = lastOpenBracket;
-    const wikiLinkEnd = offset + nextCloseBracket + 2;
-    const wikiLinkFull = text.substring(wikiLinkStart, wikiLinkEnd);
+
+    const linkStartContent = lastOpenBracket + 2;
+    const linkEndInclusive = closingIndex + 1;
+
+    if (offset < linkStartContent || offset > linkEndInclusive) {
+        return '';
+    }
+
+    const wikiLinkFull = text.substring(lastOpenBracket, closingIndex + 2);
     
     const match = wikiLinkFull.match(/^\[\[([^\]]+)\]\]$/);
     if (!match) {

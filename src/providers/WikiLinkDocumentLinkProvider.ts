@@ -7,7 +7,7 @@
  * @version 1.0.0
  */
 
-import { WikiLinkProcessor } from '../processors/WikiLinkProcessor';
+import { WikiLinkProcessor, type ParsedWikiLink } from '../processors/WikiLinkProcessor';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 import type { Position, Range, Uri, DocumentLink, TextDocument, DocumentLinkProvider } from '../types/vscode-test-types';
 
@@ -46,7 +46,7 @@ export class WikiLinkDocumentLinkProvider implements DocumentLinkProvider {
      * @returns Array of document links found in the document
      * @throws {Error} When link processing fails
      */
-    provideDocumentLinks(document: TextDocument): DocumentLink[] {
+    async provideDocumentLinks(document: TextDocument): Promise<DocumentLink[]> {
         if (document.languageId !== 'markdown') {
             return [];
         }
@@ -60,32 +60,46 @@ export class WikiLinkDocumentLinkProvider implements DocumentLinkProvider {
             try {
                 const linkText = match[1];
                 const parsedLink = this.wikiLinkProcessor.parseWikiLink(linkText);
-                
+
                 const startPos = document.positionAt(match.index);
                 const endPos = document.positionAt(match.index + match[0].length);
-                
-                // VS Code のRangeとUriをモック可能にする
+
                 const range = this.createRange ? this.createRange(startPos, endPos) : { start: startPos, end: endPos };
-                
-                const fileName = this.wikiLinkProcessor.transformFileName(parsedLink.pageName);
+
+                const transformedName = this.wikiLinkProcessor.transformFileName(parsedLink.pageName);
                 const extension = this.configurationManager?.getNoteExtension() || '.md';
                 const vaultRoot = this.configurationManager?.getVaultRoot() || '';
 
-                // URIをモック可能にする
-                // vaultRootが空の場合は相対パスとして扱い、先頭のスラッシュを付けない
-                const fullPath = vaultRoot
-                    ? `${vaultRoot}/${fileName}${extension}`
-                    : `${fileName}${extension}`;
-                const filePath: Uri = this.createUri ? this.createUri(fullPath) : {
-                    path: fullPath,
-                    fsPath: fullPath,
-                    toString: () => fullPath
-                };
-                
-                const documentLink = this.createDocumentLink ? 
-                    this.createDocumentLink(range, filePath) : 
-                    { range, target: filePath };
-                
+                let targetUri: Uri | null = null;
+
+                if (this.resolveLinkTarget) {
+                    try {
+                        targetUri = await this.resolveLinkTarget({
+                            fileName: transformedName,
+                            parsedLink,
+                            extension,
+                            document
+                        });
+                    } catch (resolveError) {
+                        console.warn('Failed to resolve WikiLink target via resolver:', resolveError);
+                    }
+                }
+
+                if (!targetUri) {
+                    const fullPath = vaultRoot
+                        ? `${vaultRoot}/${transformedName}${extension}`
+                        : `${transformedName}${extension}`;
+                    targetUri = this.createUri ? this.createUri(fullPath) : {
+                        path: fullPath,
+                        fsPath: fullPath,
+                        toString: () => fullPath
+                    };
+                }
+
+                const documentLink = this.createDocumentLink ?
+                    this.createDocumentLink(range, targetUri) :
+                    { range, target: targetUri };
+
                 links.push(documentLink);
             } catch (error) {
                 // 無効なWikiLinkは無視
@@ -95,11 +109,18 @@ export class WikiLinkDocumentLinkProvider implements DocumentLinkProvider {
         
         return links;
     }
-    
+
     /** Factory function to create Range objects (overridden in VS Code implementation) */
     createRange?: (start: Position, end: Position) => Range;
     /** Factory function to create Uri objects (overridden in VS Code implementation) */
     createUri?: (path: string) => Uri;
     /** Factory function to create DocumentLink objects (overridden in VS Code implementation) */
     createDocumentLink?: (range: Range, target?: Uri) => DocumentLink;
+    /** Optional resolver to locate existing note URIs (overridden in VS Code implementation) */
+    resolveLinkTarget?: (params: {
+        fileName: string;
+        parsedLink: ParsedWikiLink;
+        extension: string;
+        document: TextDocument;
+    }) => Promise<Uri | null>;
 }

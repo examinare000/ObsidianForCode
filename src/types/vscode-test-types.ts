@@ -66,7 +66,7 @@ export interface DocumentLink {
  * Scans documents and returns clickable links for navigation.
  */
 export interface DocumentLinkProvider {
-    provideDocumentLinks(document: TextDocument): DocumentLink[];
+    provideDocumentLinks(document: TextDocument): DocumentLink[] | Promise<DocumentLink[]>;
 }
 
 /**

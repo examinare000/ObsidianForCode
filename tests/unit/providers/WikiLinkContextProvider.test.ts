@@ -131,7 +131,8 @@ This document contains various WikiLink patterns to test the extension:
                 { char: 7, desc: 'middle of Simple', expected: true }, // p
                 { char: 11, desc: 'space', expected: true },         // ' '
                 { char: 12, desc: 'P in Page', expected: true },     // P
-                { char: 15, desc: 'end of Page', expected: true }    // e（]] の直前）
+                { char: 15, desc: 'end of Page', expected: true },   // ']' の直前
+                { char: 16, desc: 'closing bracket', expected: true } // 2つ目の閉じ括弧
             ];
 
             positions.forEach(pos => {
@@ -141,6 +142,14 @@ This document contains various WikiLink patterns to test the extension:
                     `Position ${pos.char} (${pos.desc}) should be ${pos.expected}`);
             });
         });
+    });
+
+    it('閉じ括弧上のカーソルでもWikiLink内と判定する', () => {
+        const text = 'Example [[Page]] text';
+        const secondClosingOffset = text.indexOf(']]') + 1; // 2つ目の ']' の位置
+
+        const result = isPositionInWikiLink(text, secondClosingOffset);
+        expect(result).to.be.true;
     });
 });
 
@@ -160,7 +169,7 @@ function isPositionInWikiLink(text: string, offset: number): boolean {
 
         // カーソルがこのWikiLink内にあるかチェック
         // [[  と ]] の間（内側）にある場合のみtrue
-        if (offset > linkStart + 1 && offset < linkEnd - 1) {
+        if (offset >= linkStart + 2 && offset <= linkEnd - 1) {
             console.log(`Position ${offset} IS inside WikiLink`);
             return true;
         }
