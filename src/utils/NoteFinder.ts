@@ -74,8 +74,9 @@ export class NoteFinder {
     /**
      * Finds all notes with titles that start with the given prefix.
      * Useful for autocomplete suggestions in WikiLinks.
+     * Supports directory filtering using slash notation (e.g., "folder/file").
      *
-     * @param prefix - The prefix to match note titles against
+     * @param prefix - The prefix to match note titles against, optionally including directory path
      * @param workspaceFolder - The workspace folder to search within
      * @param vaultRoot - Optional vault root path to constrain the search
      * @param extension - File extension to search for (default: '.md')
@@ -93,11 +94,26 @@ export class NoteFinder {
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
             : workspaceFolder.uri.fsPath;
 
-        // Create glob pattern for all markdown files
-        const pattern = new vscode.RelativePattern(
-            searchBase,
-            `**/*${extension}`
-        );
+        // Parse directory path and file prefix from the input
+        const lastSlashIndex = prefix.lastIndexOf('/');
+        const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) : '';
+        const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
+
+        // Determine the search pattern based on whether a directory is specified
+        let searchPath: string;
+        let globPattern: string;
+
+        if (directoryPath) {
+            // Search only in the specified directory
+            searchPath = path.join(searchBase, directoryPath);
+            globPattern = `**/*${extension}`;
+        } else {
+            // Search in all directories (original behavior)
+            searchPath = searchBase;
+            globPattern = `**/*${extension}`;
+        }
+
+        const pattern = new vscode.RelativePattern(searchPath, globPattern);
 
         try {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**', maxResults * 2);
@@ -107,9 +123,20 @@ export class NoteFinder {
             for (const file of files) {
                 const fileName = path.basename(file.fsPath, extension);
 
-                // Check if the file name starts with the prefix (case-insensitive)
-                if (fileName.toLowerCase().startsWith(prefix.toLowerCase())) {
+                // Check if the file name starts with the file prefix (case-insensitive)
+                if (fileName.toLowerCase().startsWith(filePrefix.toLowerCase())) {
+                    // Calculate relative path from the original searchBase (not searchPath)
                     const relativePath = path.relative(searchBase, file.fsPath);
+
+                    // If directory path is specified, ensure the file is in that directory
+                    if (directoryPath) {
+                        const normalizedRelativePath = relativePath.split(path.sep).join('/');
+                        const normalizedDirectoryPath = directoryPath.split(path.sep).join('/');
+                        if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
+                            continue;
+                        }
+                    }
+
                     results.push({
                         title: fileName,
                         uri: file,
@@ -121,8 +148,8 @@ export class NoteFinder {
             // Sort by relevance (exact match first, then by path depth, then alphabetically)
             results.sort((a, b) => {
                 // Exact match (case-insensitive) comes first
-                const aExact = a.title.toLowerCase() === prefix.toLowerCase();
-                const bExact = b.title.toLowerCase() === prefix.toLowerCase();
+                const aExact = a.title.toLowerCase() === filePrefix.toLowerCase();
+                const bExact = b.title.toLowerCase() === filePrefix.toLowerCase();
                 if (aExact && !bExact) {
                     return -1;
                 }
