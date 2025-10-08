@@ -87,7 +87,8 @@ export function activate(context: vscode.ExtensionContext) {
         completionProviderDisposable = vscode.languages.registerCompletionItemProvider(
             { scheme: 'file', language: 'markdown' },
             wikiLinkCompletionProvider,
-            '[' // Trigger character
+            '[', // Trigger character for opening bracket
+            '/'  // Trigger character for directory path separator
         );
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register WikiLinkCompletionProvider');
