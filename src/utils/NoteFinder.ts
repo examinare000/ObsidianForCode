@@ -118,16 +118,38 @@ export class NoteFinder {
         try {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**', maxResults * 2);
 
-            const results: { title: string; uri: vscode.Uri; relativePath: string }[] = [];
+            interface ResultWithMatchType {
+                title: string;
+                uri: vscode.Uri;
+                relativePath: string;
+                matchType: 'exact' | 'filePrefix' | 'dirPrefix';
+            }
+
+            const resultsWithType: ResultWithMatchType[] = [];
 
             for (const file of files) {
                 const fileName = path.basename(file.fsPath, extension);
+                const relativePath = path.relative(searchBase, file.fsPath);
 
                 // Check if the file name starts with the file prefix (case-insensitive)
-                if (fileName.toLowerCase().startsWith(filePrefix.toLowerCase())) {
-                    // Calculate relative path from the original searchBase (not searchPath)
-                    const relativePath = path.relative(searchBase, file.fsPath);
+                const fileNameMatches = fileName.toLowerCase().startsWith(filePrefix.toLowerCase());
+                const exactMatch = fileName.toLowerCase() === filePrefix.toLowerCase();
 
+                // Check if any directory in the path matches the prefix (only when no directory path is specified)
+                let directoryMatches = false;
+                if (!directoryPath && filePrefix) {
+                    const pathSegments = relativePath.split(path.sep);
+                    // Check each directory segment (excluding the file name)
+                    for (let i = 0; i < pathSegments.length - 1; i++) {
+                        if (pathSegments[i].toLowerCase().startsWith(filePrefix.toLowerCase())) {
+                            directoryMatches = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Include file if either file name or directory name matches
+                if (fileNameMatches || directoryMatches) {
                     // If directory path is specified, ensure the file is in that directory
                     if (directoryPath) {
                         const normalizedRelativePath = relativePath.split(path.sep).join('/');
@@ -137,24 +159,33 @@ export class NoteFinder {
                         }
                     }
 
-                    results.push({
+                    // Determine match type
+                    let matchType: 'exact' | 'filePrefix' | 'dirPrefix';
+                    if (exactMatch) {
+                        matchType = 'exact';
+                    } else if (fileNameMatches) {
+                        matchType = 'filePrefix';
+                    } else {
+                        matchType = 'dirPrefix';
+                    }
+
+                    resultsWithType.push({
                         title: fileName,
                         uri: file,
-                        relativePath: relativePath
+                        relativePath: relativePath,
+                        matchType: matchType
                     });
                 }
             }
 
-            // Sort by relevance (exact match first, then by path depth, then alphabetically)
-            results.sort((a, b) => {
-                // Exact match (case-insensitive) comes first
-                const aExact = a.title.toLowerCase() === filePrefix.toLowerCase();
-                const bExact = b.title.toLowerCase() === filePrefix.toLowerCase();
-                if (aExact && !bExact) {
-                    return -1;
-                }
-                if (!aExact && bExact) {
-                    return 1;
+            // Sort by relevance
+            resultsWithType.sort((a, b) => {
+                // Match type priority: exact > filePrefix > dirPrefix
+                const matchTypeOrder = { exact: 0, filePrefix: 1, dirPrefix: 2 };
+                const aOrder = matchTypeOrder[a.matchType];
+                const bOrder = matchTypeOrder[b.matchType];
+                if (aOrder !== bOrder) {
+                    return aOrder - bOrder;
                 }
 
                 // Then sort by path depth (shallower first)
@@ -167,6 +198,13 @@ export class NoteFinder {
                 // Finally sort alphabetically
                 return a.title.localeCompare(b.title);
             });
+
+            // Convert to final result format
+            const results = resultsWithType.map(r => ({
+                title: r.title,
+                uri: r.uri,
+                relativePath: r.relativePath
+            }));
 
             // Return only the top maxResults entries
             return results.slice(0, maxResults);
