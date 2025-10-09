@@ -40,6 +40,22 @@ const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) 
 const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
 ```
 
+### 1.5. サブディレクトリ名前方一致検索機能の追加
+
+ディレクトリパスが指定されていない場合、ディレクトリ名自体がプレフィックスにマッチするファイルも候補に含める：
+- パス内の各ディレクトリセグメントをプレフィックスとマッチング
+- ディレクトリ名がマッチした場合、そのディレクトリ内のすべてのファイルを候補に追加
+- マッチタイプ（exact、filePrefix、dirPrefix）で優先順位を付与
+
+```typescript
+// 例: "proj" というプレフィックスで検索した場合
+// - "Project.md" （ファイル名マッチ）
+// - "projects/Plan.md" （ディレクトリ名 "projects" がマッチ）
+// - "projects/Notes.md" （ディレクトリ名 "projects" がマッチ）
+```
+
+この機能により、ユーザーはディレクトリ名を入力するだけでそのディレクトリ内のファイルを探索できる。
+
 ### 2. スラッシュ記法のサポート
 
 以下のパターンをサポート：
@@ -94,6 +110,8 @@ vscode.languages.registerCompletionItemProvider(
 - 大規模 Vault での補完精度とユーザビリティが大幅に向上
 - ディレクトリ構造を活用した効率的なファイル検索が可能
 - 自動補完のトリガーによる入力体験の向上
+- サブディレクトリ名前方一致により、ディレクトリ名を入力するだけでそのディレクトリ内のファイルを探索可能
+- マッチタイプによる優先順位付けで、ユーザーの意図に沿った候補を優先表示
 - 包括的なテストケースによる機能の品質保証
 - Obsidian との互換性向上
 

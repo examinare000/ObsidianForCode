@@ -399,6 +399,11 @@ class NoteFinder {
    * - `folder/subfolder/file` - ネストされたディレクトリをサポート
    * - `file` - 全ディレクトリを検索（従来の動作、後方互換性）
    *
+   * **サブディレクトリ名前方一致検索（v0.4.8以降）:**
+   * ディレクトリパスが指定されていない場合、ディレクトリ名がプレフィックスにマッチするファイルも含める
+   * - `proj` で検索 → `Project.md`（ファイル名マッチ）+ `projects/Plan.md`（ディレクトリ名マッチ）
+   * - マッチタイプ優先順位: 完全一致 > ファイル名プレフィックス > ディレクトリ名プレフィックス
+   *
    * @param prefix - ファイル名のプレフィックス（オプションでディレクトリパスを含む）
    * @param workspaceFolder - 検索対象のワークスペースフォルダ
    * @param vaultRoot - オプションのVaultルートパス
@@ -443,10 +448,16 @@ const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : 
 
 **検索動作:**
 - **ディレクトリパスあり:** 指定ディレクトリ内のみを検索
-- **ディレクトリパスなし:** 全ディレクトリを検索（従来の動作）
+- **ディレクトリパスなし:** 全ディレクトリを検索 + ディレクトリ名マッチング
+
+**サブディレクトリ名前方一致:**
+ディレクトリパスが指定されていない場合、パス内のディレクトリ名もプレフィックスマッチングの対象となる：
+- ファイル名がマッチ → そのファイルを候補に追加
+- ディレクトリ名がマッチ → そのディレクトリ内のファイルを候補に追加
+- 両方マッチする場合も重複なく追加
 
 **ソート順:**
-1. 完全一致（大文字小文字を区別しない）
+1. マッチタイプ（exact > filePrefix > dirPrefix）
 2. パスの深さ（浅い階層を優先）
 3. アルファベット順
 
@@ -474,6 +485,16 @@ const allMatches = await NoteFinder.findNotesByPrefix(
   'notes'
 );
 // → Meeting.md, 2024/Meeting.md, projects/Meeting Notes.md
+
+// 例4: サブディレクトリ名前方一致検索
+const dirMatches = await NoteFinder.findNotesByPrefix(
+  'proj',
+  workspaceFolder,
+  'notes'
+);
+// → Project.md (ファイル名マッチ)
+//    projects/Plan.md (ディレクトリ名 "projects" がマッチ)
+//    projects/Notes.md (ディレクトリ名 "projects" がマッチ)
 ```
 
 #### 3.5.3 補完トリガー設定

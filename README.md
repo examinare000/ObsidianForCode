@@ -23,6 +23,7 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
   - `[[folder/file]]` - 特定ディレクトリ内のファイルを絞り込み
   - `[[folder/]]` - ディレクトリ内の全ファイルをリスト
   - ネストされたパス対応 (`[[2024/01/meeting]]`)
+  - ディレクトリ名マッチング（`[[proj]]` → `projects/` 内のファイルも候補に表示）
 
 ### コマンド
 - **Open/Create WikiLink** (`Ctrl+Enter` / `Cmd+Enter`) - WikiLink先を開く・作成（`]]` 上のカーソルにも対応）
