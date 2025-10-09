@@ -8,17 +8,21 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 
 最新の更新内容やバグ修正については、[リリースノート](./docs/releases/)をご確認ください。
 
-- **最新**: v0.4.7-dev - WikiLink操作性改善 (Ctrl/Cmd+Enter境界対応)
+- **最新**: v0.4.8-dev - WikiLink補完ディレクトリパス絞り込み機能
 
 ## 🚀 機能
 
 ### WikiLinkサポート
 - `[[Page]]` - シンプルなWikiLink
-- `[[Page|Display Name]]` - 表示名付きWikiLink  
+- `[[Page|Display Name]]` - 表示名付きWikiLink
 - `[[Page#Heading]]` - セクション指定WikiLink
 - `[[Page#Heading|Display]]` - 複合WikiLink
 - サブディレクトリ内の既存ノートを優先して解決
 - Heading / Alias 入力中でも安定したWikiLink補完
+- **ディレクトリパス絞り込み補完** (v0.4.8)
+  - `[[folder/file]]` - 特定ディレクトリ内のファイルを絞り込み
+  - `[[folder/]]` - ディレクトリ内の全ファイルをリスト
+  - ネストされたパス対応 (`[[2024/01/meeting]]`)
 
 ### コマンド
 - **Open/Create WikiLink** (`Ctrl+Enter` / `Cmd+Enter`) - WikiLink先を開く・作成（`]]` 上のカーソルにも対応）
@@ -91,7 +95,7 @@ npm run test:integration # 統合テスト
 ## 📚 ドキュメント
 
 - [開発状況レポート](./docs/development-status.md) - 現在の開発状況と統計
-- [アーキテクチャ決定記録 (ADR)](./docs/adr/) - 技術的意思決定の記録（16件）
+- [アーキテクチャ決定記録 (ADR)](./docs/adr/) - 技術的意思決定の記録（17件）
 - [プロダクト要件定義 (PRD)](./docs/prd/prd.md) - 機能要件と設計方針
 - [詳細設計書](./docs/tech/detailed-design.md) - システムアーキテクチャ
 

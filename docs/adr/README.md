@@ -22,6 +22,7 @@
 | [014](./014-enhanced-note-features-quality-improvements.md) | Enhanced Note Features Quality Improvements | Accepted | 2025-09-22 | WikiLink補完・リスト継続機能の品質向上 |
 | [015](./ADR-015-test-quality-improvements.md) | Test Quality Improvements | Accepted | 2025-10-01 | テスト成功率95.6%達成とグローバルモック統合 |
 | [016](./016-wikilink-interaction-refinement.md) | WikiLink Interaction Refinement | Accepted | 2025-10-04 | WikiLink境界判定・リンク解決・補完の操作性改善 |
+| [017](./017-wikilink-completion-directory-filtering.md) | WikiLink Completion Directory Filtering | Accepted | 2025-10-08 | WikiLink補完でディレクトリパス絞り込み機能を実装 |
 
 ## ADR作成ガイドライン
 
