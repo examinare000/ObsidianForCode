@@ -393,6 +393,152 @@ describe('NoteFinder', () => {
             // Should search all directories when no slash is present
             expect(result).to.have.lengthOf(2);
         });
+
+        it('should include files from directories matching prefix', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/projects/Plan.md'),
+                vscode.Uri.file('/test/workspace/notes/projects/Notes.md'),
+                vscode.Uri.file('/test/workspace/notes/Project Root.md') // Also matches prefix
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'proj',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should include both files from 'projects/' directory and 'Project Root.md'
+            expect(result).to.have.lengthOf(3);
+            expect(result.some(n => n.title === 'Plan')).to.be.true;
+            expect(result.some(n => n.title === 'Notes')).to.be.true;
+            expect(result.some(n => n.title === 'Project Root')).to.be.true;
+        });
+
+        it('should include files from multiple matching directories', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/archive/2024/Note1.md'),
+                vscode.Uri.file('/test/workspace/notes/archive/2023/Note2.md'),
+                vscode.Uri.file('/test/workspace/notes/archived/Old.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'arc',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should include files from both 'archive/' and 'archived/' directories
+            expect(result).to.have.lengthOf(3);
+        });
+
+        it('should prioritize file name matches over directory name matches', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/Test.md'), // Exact file name match
+                vscode.Uri.file('/test/workspace/notes/tests/Example.md'), // Directory match
+                vscode.Uri.file('/test/workspace/notes/Testing.md') // Partial file name match
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'test',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.have.lengthOf(3);
+            // Exact match should come first
+            expect(result[0].title).to.equal('Test');
+        });
+
+        it('should handle Japanese directory names', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/プロジェクト/計画.md'),
+                vscode.Uri.file('/test/workspace/notes/プロジェクト/メモ.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'プロ',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should include files from 'プロジェクト/' directory
+            expect(result).to.have.lengthOf(2);
+            expect(result.some(n => n.title === '計画')).to.be.true;
+            expect(result.some(n => n.title === 'メモ')).to.be.true;
+        });
+
+        it('should not duplicate results when both file and directory match', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/docs/README.md'),
+                vscode.Uri.file('/test/workspace/notes/Documentation.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'doc',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should not have duplicates
+            expect(result).to.have.lengthOf(2);
+            const titles = result.map(n => n.title);
+            expect(new Set(titles).size).to.equal(titles.length);
+        });
     });
 
     describe('getAllNotes', () => {
