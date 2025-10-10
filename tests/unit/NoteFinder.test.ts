@@ -392,6 +392,12 @@ describe('NoteFinder', () => {
 
             // Should search all directories when no slash is present
             expect(result).to.have.lengthOf(2);
+
+            // Verify findFiles was called with correct glob pattern
+            expect(findFilesStub.calledOnce).to.be.true;
+            const callArgs = findFilesStub.firstCall.args;
+            const globPattern = callArgs[0] as vscode.RelativePattern;
+            expect(globPattern.pattern).to.equal('**/Project*.md');
         });
 
         it('should include files from directories matching prefix', async () => {
