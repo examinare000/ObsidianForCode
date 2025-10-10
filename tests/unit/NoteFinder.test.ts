@@ -477,9 +477,11 @@ describe('NoteFinder', () => {
                 10
             );
 
+            // Verify complete sorting order: exact > filePrefix > dirPrefix, then by depth, then alphabetically
             expect(result).to.have.lengthOf(3);
-            // Exact match should come first
-            expect(result[0].title).to.equal('Test');
+            expect(result[0].title).to.equal('Test'); // exact match, depth 1
+            expect(result[1].title).to.equal('Testing'); // filePrefix match, depth 1
+            expect(result[2].title).to.equal('Example'); // dirPrefix match, depth 2
         });
 
         it('should handle Japanese directory names', async () => {
