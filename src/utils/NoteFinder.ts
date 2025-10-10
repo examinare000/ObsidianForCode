@@ -109,7 +109,8 @@ export class NoteFinder {
         };
 
         // Narrow glob pattern by filePrefix when safe to reduce I/O
-        const narrowedGlob = isSafeForGlob(filePrefix)
+        // Only apply optimization when directoryPath is specified, to allow directory name matching
+        const narrowedGlob = (directoryPath && isSafeForGlob(filePrefix))
             ? `**/${filePrefix}*${extension}`
             : `**/*${extension}`;
 
