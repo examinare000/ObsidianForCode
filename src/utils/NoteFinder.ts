@@ -170,10 +170,10 @@ export class NoteFinder {
 
                 // Include file if either file name or directory name matches
                 if (fileNameMatches || directoryMatches) {
-                    // If directory path is specified, ensure the file is in that directory
+                    // If directory path is specified, ensure the file is in that directory (case-insensitive)
                     if (directoryPath) {
-                        const normalizedRelativePath = relativePath.split(path.sep).join('/');
-                        const normalizedDirectoryPath = directoryPath.split(path.sep).join('/');
+                        const normalizedRelativePath = relativePath.split(path.sep).join('/').toLowerCase();
+                        const normalizedDirectoryPath = directoryPath.split(path.sep).join('/').toLowerCase();
                         if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
                             continue;
                         }
