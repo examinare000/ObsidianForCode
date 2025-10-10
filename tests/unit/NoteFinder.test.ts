@@ -741,6 +741,30 @@ describe('NoteFinder', () => {
             expect(findFilesStub.calledOnce).to.be.true;
         });
 
+        it('should prevent path traversal in findNotesByPrefix directory path', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves([]);
+
+            // Test with path traversal attempt
+            const result = await NoteFinder.findNotesByPrefix(
+                '../../etc/Test',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should return empty array and not call findFiles
+            expect(result).to.be.an('array').that.is.empty;
+            expect(findFilesStub.called).to.be.false;
+        });
+
         it('should handle empty vaultRoot string', async () => {
             const mockWorkspaceFolder: vscode.WorkspaceFolder = {
                 uri: vscode.Uri.file('/test/workspace'),

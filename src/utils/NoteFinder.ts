@@ -114,8 +114,18 @@ export class NoteFinder {
             : `**/*${extension}`;
 
         if (directoryPath) {
+            // Validate and constrain directoryPath to prevent path traversal
+            const candidatePath = path.resolve(searchBase, directoryPath);
+            const normalizedBase = path.resolve(searchBase);
+
+            // Ensure candidatePath is a descendant of searchBase
+            if (!candidatePath.startsWith(normalizedBase + path.sep) && candidatePath !== normalizedBase) {
+                // Path traversal attempt detected, return empty results
+                return [];
+            }
+
             // Search only in the specified directory
-            searchPath = path.join(searchBase, directoryPath);
+            searchPath = candidatePath;
             globPattern = narrowedGlob;
         } else {
             // Search in all directories (original behavior)
