@@ -34,16 +34,18 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
     }
 
     /**
-     * Sets up a file system watcher to invalidate cache on file changes.
+     * Sets up a file system watcher to invalidate cache when files are created or deleted.
+     * Note: File content changes (onDidChange) do not affect the cache since we only store
+     * file titles, URIs, and paths - not content.
      */
     private setupFileWatcher(): void {
         const extension = this.configManager.getNoteExtension();
         this.fileWatcher = vscode.workspace.createFileSystemWatcher(`**/*${extension}`);
 
-        // Clear cache on any file change
+        // Clear cache only when the file list changes (create/delete)
+        // Content changes don't affect note titles, URIs, or paths
         this.fileWatcher.onDidCreate(() => this.clearCache());
         this.fileWatcher.onDidDelete(() => this.clearCache());
-        this.fileWatcher.onDidChange(() => this.clearCache());
     }
 
     /**
