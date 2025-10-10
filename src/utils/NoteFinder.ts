@@ -103,14 +103,24 @@ export class NoteFinder {
         let searchPath: string;
         let globPattern: string;
 
+        // Helper function to check if filePrefix is safe for glob narrowing
+        const isSafeForGlob = (str: string): boolean => {
+            return str.length > 0 && !/[*?\[\]{}]/.test(str);
+        };
+
+        // Narrow glob pattern by filePrefix when safe to reduce I/O
+        const narrowedGlob = isSafeForGlob(filePrefix)
+            ? `**/${filePrefix}*${extension}`
+            : `**/*${extension}`;
+
         if (directoryPath) {
             // Search only in the specified directory
             searchPath = path.join(searchBase, directoryPath);
-            globPattern = `**/*${extension}`;
+            globPattern = narrowedGlob;
         } else {
             // Search in all directories (original behavior)
             searchPath = searchBase;
-            globPattern = `**/*${extension}`;
+            globPattern = narrowedGlob;
         }
 
         const pattern = new vscode.RelativePattern(searchPath, globPattern);
