@@ -81,91 +81,14 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
 
     /**
      * Filters notes by prefix from the cached list.
+     * Delegates to NoteFinder.filterNotesByPrefix for consistent filtering logic.
      */
     private filterNotesByPrefix(
         allNotes: { title: string; uri: vscode.Uri; relativePath: string }[],
         prefix: string,
         maxResults: number
     ): { title: string; uri: vscode.Uri; relativePath: string }[] {
-        if (!prefix) {
-            return allNotes.slice(0, maxResults);
-        }
-
-        // Parse directory path and file prefix
-        const lastSlashIndex = prefix.lastIndexOf('/');
-        const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) : '';
-        const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
-
-        interface ResultWithMatchType {
-            title: string;
-            uri: vscode.Uri;
-            relativePath: string;
-            matchType: 'exact' | 'filePrefix' | 'dirPrefix';
-        }
-
-        const resultsWithType: ResultWithMatchType[] = [];
-
-        for (const note of allNotes) {
-            const fileNameMatches = note.title.toLowerCase().startsWith(filePrefix.toLowerCase());
-            const exactMatch = note.title.toLowerCase() === filePrefix.toLowerCase();
-
-            // Check if any directory in the path matches the prefix
-            let directoryMatches = false;
-            if (!directoryPath && filePrefix) {
-                const pathSegments = note.relativePath.split('/');
-                for (let i = 0; i < pathSegments.length - 1; i++) {
-                    if (pathSegments[i].toLowerCase().startsWith(filePrefix.toLowerCase())) {
-                        directoryMatches = true;
-                        break;
-                    }
-                }
-            }
-
-            if (fileNameMatches || directoryMatches) {
-                // If directory path is specified, ensure the file is in that directory
-                if (directoryPath) {
-                    const normalizedRelativePath = note.relativePath.replace(/\\/g, '/').toLowerCase();
-                    const normalizedDirectoryPath = directoryPath.toLowerCase();
-                    if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
-                        continue;
-                    }
-                }
-
-                let matchType: 'exact' | 'filePrefix' | 'dirPrefix';
-                if (exactMatch) {
-                    matchType = 'exact';
-                } else if (fileNameMatches) {
-                    matchType = 'filePrefix';
-                } else {
-                    matchType = 'dirPrefix';
-                }
-
-                resultsWithType.push({
-                    ...note,
-                    matchType
-                });
-            }
-        }
-
-        // Sort by relevance
-        resultsWithType.sort((a, b) => {
-            const matchTypeOrder = { exact: 0, filePrefix: 1, dirPrefix: 2 };
-            const aOrder = matchTypeOrder[a.matchType];
-            const bOrder = matchTypeOrder[b.matchType];
-            if (aOrder !== bOrder) {
-                return aOrder - bOrder;
-            }
-
-            const aDepth = a.relativePath.split('/').length;
-            const bDepth = b.relativePath.split('/').length;
-            if (aDepth !== bDepth) {
-                return aDepth - bDepth;
-            }
-
-            return a.title.localeCompare(b.title);
-        });
-
-        return resultsWithType.slice(0, maxResults);
+        return NoteFinder.filterNotesByPrefix(allNotes, prefix, maxResults);
     }
 
     /**

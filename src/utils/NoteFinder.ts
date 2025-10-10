@@ -72,6 +72,101 @@ export class NoteFinder {
     }
 
     /**
+     * Filters an array of notes by prefix and returns sorted results.
+     * This is a static helper method that can be used by both findNotesByPrefix and completion providers.
+     *
+     * @param notes - Array of notes to filter
+     * @param prefix - The prefix to match note titles against, optionally including directory path
+     * @param maxResults - Maximum number of results to return
+     * @returns Array of filtered and sorted note information
+     */
+    static filterNotesByPrefix(
+        notes: { title: string; uri: vscode.Uri; relativePath: string }[],
+        prefix: string,
+        maxResults: number
+    ): { title: string; uri: vscode.Uri; relativePath: string }[] {
+        if (!prefix) {
+            return notes.slice(0, maxResults);
+        }
+
+        // Parse directory path and file prefix
+        const lastSlashIndex = prefix.lastIndexOf('/');
+        const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) : '';
+        const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
+
+        interface ResultWithMatchType {
+            title: string;
+            uri: vscode.Uri;
+            relativePath: string;
+            matchType: 'exact' | 'filePrefix' | 'dirPrefix';
+        }
+
+        const resultsWithType: ResultWithMatchType[] = [];
+
+        for (const note of notes) {
+            const fileNameMatches = note.title.toLowerCase().startsWith(filePrefix.toLowerCase());
+            const exactMatch = note.title.toLowerCase() === filePrefix.toLowerCase();
+
+            // Check if any directory in the path matches the prefix
+            let directoryMatches = false;
+            if (!directoryPath && filePrefix) {
+                const pathSegments = note.relativePath.split(path.sep);
+                for (let i = 0; i < pathSegments.length - 1; i++) {
+                    if (pathSegments[i].toLowerCase().startsWith(filePrefix.toLowerCase())) {
+                        directoryMatches = true;
+                        break;
+                    }
+                }
+            }
+
+            if (fileNameMatches || directoryMatches) {
+                // If directory path is specified, ensure the file is in that directory (case-insensitive)
+                if (directoryPath) {
+                    const normalizedRelativePath = note.relativePath.split(path.sep).join('/').toLowerCase();
+                    const normalizedDirectoryPath = directoryPath.split(path.sep).join('/').toLowerCase();
+                    if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
+                        continue;
+                    }
+                }
+
+                let matchType: 'exact' | 'filePrefix' | 'dirPrefix';
+                if (exactMatch) {
+                    matchType = 'exact';
+                } else if (fileNameMatches) {
+                    matchType = 'filePrefix';
+                } else {
+                    matchType = 'dirPrefix';
+                }
+
+                resultsWithType.push({
+                    ...note,
+                    matchType
+                });
+            }
+        }
+
+        // Sort by relevance
+        resultsWithType.sort((a, b) => {
+            const matchTypeOrder = { exact: 0, filePrefix: 1, dirPrefix: 2 };
+            const aOrder = matchTypeOrder[a.matchType];
+            const bOrder = matchTypeOrder[b.matchType];
+            if (aOrder !== bOrder) {
+                return aOrder - bOrder;
+            }
+
+            const aDepth = a.relativePath.split(path.sep).length;
+            const bDepth = b.relativePath.split(path.sep).length;
+            if (aDepth !== bDepth) {
+                return aDepth - bDepth;
+            }
+
+            return a.title.localeCompare(b.title);
+        });
+
+        return resultsWithType.slice(0, maxResults);
+    }
+
+    /**
      * Finds all notes with titles that start with the given prefix.
      * Useful for autocomplete suggestions in WikiLinks.
      * Supports directory filtering using slash notation (e.g., "folder/file").
@@ -139,96 +234,15 @@ export class NoteFinder {
         try {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**', maxResults * 2);
 
-            interface ResultWithMatchType {
-                title: string;
-                uri: vscode.Uri;
-                relativePath: string;
-                matchType: 'exact' | 'filePrefix' | 'dirPrefix';
-            }
-
-            const resultsWithType: ResultWithMatchType[] = [];
-
-            for (const file of files) {
-                const fileName = path.basename(file.fsPath, extension);
-                const relativePath = path.relative(searchBase, file.fsPath);
-
-                // Check if the file name starts with the file prefix (case-insensitive)
-                const fileNameMatches = fileName.toLowerCase().startsWith(filePrefix.toLowerCase());
-                const exactMatch = fileName.toLowerCase() === filePrefix.toLowerCase();
-
-                // Check if any directory in the path matches the prefix (only when no directory path is specified)
-                let directoryMatches = false;
-                if (!directoryPath && filePrefix) {
-                    const pathSegments = relativePath.split(path.sep);
-                    // Check each directory segment (excluding the file name)
-                    for (let i = 0; i < pathSegments.length - 1; i++) {
-                        if (pathSegments[i].toLowerCase().startsWith(filePrefix.toLowerCase())) {
-                            directoryMatches = true;
-                            break;
-                        }
-                    }
-                }
-
-                // Include file if either file name or directory name matches
-                if (fileNameMatches || directoryMatches) {
-                    // If directory path is specified, ensure the file is in that directory (case-insensitive)
-                    if (directoryPath) {
-                        const normalizedRelativePath = relativePath.split(path.sep).join('/').toLowerCase();
-                        const normalizedDirectoryPath = directoryPath.split(path.sep).join('/').toLowerCase();
-                        if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
-                            continue;
-                        }
-                    }
-
-                    // Determine match type
-                    let matchType: 'exact' | 'filePrefix' | 'dirPrefix';
-                    if (exactMatch) {
-                        matchType = 'exact';
-                    } else if (fileNameMatches) {
-                        matchType = 'filePrefix';
-                    } else {
-                        matchType = 'dirPrefix';
-                    }
-
-                    resultsWithType.push({
-                        title: fileName,
-                        uri: file,
-                        relativePath: relativePath,
-                        matchType: matchType
-                    });
-                }
-            }
-
-            // Sort by relevance
-            resultsWithType.sort((a, b) => {
-                // Match type priority: exact > filePrefix > dirPrefix
-                const matchTypeOrder = { exact: 0, filePrefix: 1, dirPrefix: 2 };
-                const aOrder = matchTypeOrder[a.matchType];
-                const bOrder = matchTypeOrder[b.matchType];
-                if (aOrder !== bOrder) {
-                    return aOrder - bOrder;
-                }
-
-                // Then sort by path depth (shallower first)
-                const aDepth = a.relativePath.split(path.sep).length;
-                const bDepth = b.relativePath.split(path.sep).length;
-                if (aDepth !== bDepth) {
-                    return aDepth - bDepth;
-                }
-
-                // Finally sort alphabetically
-                return a.title.localeCompare(b.title);
-            });
-
-            // Convert to final result format
-            const results = resultsWithType.map(r => ({
-                title: r.title,
-                uri: r.uri,
-                relativePath: r.relativePath
+            // Convert files to note objects
+            const notes = files.map(file => ({
+                title: path.basename(file.fsPath, extension),
+                uri: file,
+                relativePath: path.relative(searchBase, file.fsPath)
             }));
 
-            // Return only the top maxResults entries
-            return results.slice(0, maxResults);
+            // Use the static helper method to filter and sort
+            return NoteFinder.filterNotesByPrefix(notes, prefix, maxResults);
         } catch (error) {
             console.error('Error finding notes by prefix:', error);
             return [];
