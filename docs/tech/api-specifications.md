@@ -367,6 +367,149 @@ enum TimeFormatToken {
 }
 ```
 
+### 3.5 NoteFinder
+
+#### 3.5.1 メソッド一覧
+```typescript
+class NoteFinder {
+  /**
+   * タイトルによる完全一致でノートを検索
+   * すべてのサブディレクトリを対象に検索し、見つかった場合は最も浅い階層のファイルを優先
+   *
+   * @param title - 検索するノートのタイトル（拡張子なし）
+   * @param workspaceFolder - 検索対象のワークスペースフォルダ
+   * @param vaultRoot - オプションのVaultルートパス
+   * @param extension - ファイル拡張子（デフォルト: '.md'）
+   * @returns ノート情報またはnull
+   */
+  static async findNoteByTitle(
+    title: string,
+    workspaceFolder: vscode.WorkspaceFolder,
+    vaultRoot?: string,
+    extension?: string
+  ): Promise<{ title: string; uri: vscode.Uri; relativePath: string } | null>;
+
+  /**
+   * プレフィックスによるノート検索（オートコンプリート用）
+   * ディレクトリパスをサポートし、スラッシュ記法で特定ディレクトリ内を絞り込み可能
+   *
+   * **ディレクトリパス絞り込み機能（v0.4.8以降）:**
+   * - `folder/file` - 特定ディレクトリ内のファイルを絞り込み
+   * - `folder/` - ディレクトリ内の全ファイルをリスト
+   * - `folder/subfolder/file` - ネストされたディレクトリをサポート
+   * - `file` - 全ディレクトリを検索（従来の動作、後方互換性）
+   *
+   * **サブディレクトリ名前方一致検索（v0.4.8以降）:**
+   * ディレクトリパスが指定されていない場合、ディレクトリ名がプレフィックスにマッチするファイルも含める
+   * - `proj` で検索 → `Project.md`（ファイル名マッチ）+ `projects/Plan.md`（ディレクトリ名マッチ）
+   * - マッチタイプ優先順位: 完全一致 > ファイル名プレフィックス > ディレクトリ名プレフィックス
+   *
+   * @param prefix - ファイル名のプレフィックス（オプションでディレクトリパスを含む）
+   * @param workspaceFolder - 検索対象のワークスペースフォルダ
+   * @param vaultRoot - オプションのVaultルートパス
+   * @param extension - ファイル拡張子（デフォルト: '.md'）
+   * @param maxResults - 最大結果数（デフォルト: 50）
+   * @returns マッチしたノート情報の配列（関連性順にソート）
+   */
+  static async findNotesByPrefix(
+    prefix: string,
+    workspaceFolder: vscode.WorkspaceFolder,
+    vaultRoot?: string,
+    extension?: string,
+    maxResults?: number
+  ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]>;
+
+  /**
+   * Vault内のすべてのノートを取得
+   * インデックス作成や全体検索に使用
+   *
+   * @param workspaceFolder - 検索対象のワークスペースフォルダ
+   * @param vaultRoot - オプションのVaultルートパス
+   * @param extension - ファイル拡張子（デフォルト: '.md'）
+   * @returns すべてのノート情報の配列
+   */
+  static async getAllNotes(
+    workspaceFolder: vscode.WorkspaceFolder,
+    vaultRoot?: string,
+    extension?: string
+  ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]>;
+}
+```
+
+#### 3.5.2 ディレクトリパス絞り込みの動作
+
+**パス解析ロジック:**
+```typescript
+// プレフィックスを解析してディレクトリパスとファイル名に分離
+const lastSlashIndex = prefix.lastIndexOf('/');
+const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) : '';
+const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
+```
+
+**検索動作:**
+- **ディレクトリパスあり:** 指定ディレクトリ内のみを検索
+- **ディレクトリパスなし:** 全ディレクトリを検索 + ディレクトリ名マッチング
+
+**サブディレクトリ名前方一致:**
+ディレクトリパスが指定されていない場合、パス内のディレクトリ名もプレフィックスマッチングの対象となる：
+- ファイル名がマッチ → そのファイルを候補に追加
+- ディレクトリ名がマッチ → そのディレクトリ内のファイルを候補に追加
+- 両方マッチする場合も重複なく追加
+
+**ソート順:**
+1. マッチタイプ（exact > filePrefix > dirPrefix）
+2. パスの深さ（浅い階層を優先）
+3. アルファベット順
+
+**使用例:**
+```typescript
+// 例1: プロジェクトディレクトリ内の "Task" で始まるファイルを検索
+const results = await NoteFinder.findNotesByPrefix(
+  'projects/Task',
+  workspaceFolder,
+  'notes'
+);
+// → projects/Task1.md, projects/Task List.md
+
+// 例2: archiveディレクトリ内のすべてのファイルをリスト
+const allArchived = await NoteFinder.findNotesByPrefix(
+  'archive/',
+  workspaceFolder,
+  'notes'
+);
+
+// 例3: 従来通りの全体検索
+const allMatches = await NoteFinder.findNotesByPrefix(
+  'Meeting',
+  workspaceFolder,
+  'notes'
+);
+// → Meeting.md, 2024/Meeting.md, projects/Meeting Notes.md
+
+// 例4: サブディレクトリ名前方一致検索
+const dirMatches = await NoteFinder.findNotesByPrefix(
+  'proj',
+  workspaceFolder,
+  'notes'
+);
+// → Project.md (ファイル名マッチ)
+//    projects/Plan.md (ディレクトリ名 "projects" がマッチ)
+//    projects/Notes.md (ディレクトリ名 "projects" がマッチ)
+```
+
+#### 3.5.3 補完トリガー設定
+
+WikiLink補完機能でディレクトリパス絞り込みを活用するため、補完トリガー文字に `/` を含める：
+
+```typescript
+vscode.languages.registerCompletionItemProvider(
+  { scheme: 'file', language: 'markdown' },
+  completionProvider,
+  '[',  // WikiLink開始時にトリガー
+  '/'   // ディレクトリパス入力時にトリガー
+);
+```
+
 ## 4. コマンド仕様
 
 ### 4.1 登録コマンド一覧

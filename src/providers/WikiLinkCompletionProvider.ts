@@ -20,6 +20,8 @@ import { ConfigurationManager } from '../managers/ConfigurationManager';
  */
 export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider {
     private configManager: ConfigurationManager;
+    private noteCache: Map<string, { title: string; uri: vscode.Uri; relativePath: string }[]> | null = null;
+    private fileWatcher: vscode.FileSystemWatcher | null = null;
 
     /**
      * Creates a new WikiLinkCompletionProvider instance.
@@ -28,6 +30,76 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
      */
     constructor(configManager: ConfigurationManager) {
         this.configManager = configManager;
+        this.setupFileWatcher();
+    }
+
+    /**
+     * Sets up a file system watcher to invalidate cache on file changes.
+     */
+    private setupFileWatcher(): void {
+        const extension = this.configManager.getNoteExtension();
+        this.fileWatcher = vscode.workspace.createFileSystemWatcher(`**/*${extension}`);
+
+        // Clear cache on any file change
+        this.fileWatcher.onDidCreate(() => this.clearCache());
+        this.fileWatcher.onDidDelete(() => this.clearCache());
+        this.fileWatcher.onDidChange(() => this.clearCache());
+    }
+
+    /**
+     * Clears the note cache.
+     */
+    private clearCache(): void {
+        this.noteCache = null;
+    }
+
+    /**
+     * Gets all notes from cache or loads them if cache is empty.
+     */
+    private async getAllNotesWithCache(
+        workspaceFolder: vscode.WorkspaceFolder,
+        vaultRoot: string | undefined,
+        extension: string
+    ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]> {
+        const cacheKey = `${workspaceFolder.uri.fsPath}:${vaultRoot || ''}`;
+
+        if (this.noteCache && this.noteCache.has(cacheKey)) {
+            return this.noteCache.get(cacheKey)!;
+        }
+
+        // Load all notes
+        const allNotes = await NoteFinder.getAllNotes(workspaceFolder, vaultRoot, extension);
+
+        // Cache the results
+        if (!this.noteCache) {
+            this.noteCache = new Map();
+        }
+        this.noteCache.set(cacheKey, allNotes);
+
+        return allNotes;
+    }
+
+    /**
+     * Filters notes by prefix from the cached list.
+     * Delegates to NoteFinder.filterNotesByPrefix for consistent filtering logic.
+     */
+    private filterNotesByPrefix(
+        allNotes: { title: string; uri: vscode.Uri; relativePath: string }[],
+        prefix: string,
+        maxResults: number
+    ): { title: string; uri: vscode.Uri; relativePath: string }[] {
+        return NoteFinder.filterNotesByPrefix(allNotes, prefix, maxResults);
+    }
+
+    /**
+     * Disposes of resources used by this provider.
+     */
+    dispose(): void {
+        if (this.fileWatcher) {
+            this.fileWatcher.dispose();
+            this.fileWatcher = null;
+        }
+        this.clearCache();
     }
 
     /**
@@ -114,14 +186,9 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         const vaultRoot = this.configManager.getVaultRoot();
         const extension = this.configManager.getNoteExtension();
 
-        // Find notes matching the prefix
-        const notes = await NoteFinder.findNotesByPrefix(
-            searchPrefix,
-            workspaceFolder,
-            vaultRoot,
-            extension,
-            50 // Maximum suggestions
-        );
+        // Get all notes from cache and filter by prefix
+        const allNotes = await this.getAllNotesWithCache(workspaceFolder, vaultRoot, extension);
+        const notes = this.filterNotesByPrefix(allNotes, searchPrefix, 50);
 
         // Convert to completion items
         const completionItems: vscode.CompletionItem[] = notes.map((note, index) => {

@@ -75,7 +75,13 @@ const vscode = {
             name: 'test-workspace',
             index: 0
         }),
-        applyEdit: async () => true
+        applyEdit: async () => true,
+        createFileSystemWatcher: () => ({
+            onDidCreate: () => ({ dispose: () => {} }),
+            onDidDelete: () => ({ dispose: () => {} }),
+            onDidChange: () => ({ dispose: () => {} }),
+            dispose: () => {}
+        })
     },
     window: {
         showTextDocument: async () => ({}),
