@@ -9,7 +9,6 @@
 import { expect } from 'chai';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import * as path from 'path';
 import { NoteFinder } from '../../src/utils/NoteFinder';
 
 describe('NoteFinder', () => {
