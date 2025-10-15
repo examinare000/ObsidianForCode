@@ -93,8 +93,7 @@ describe('WikiLinkCompletionProvider', () => {
             get: (key: string, defaultValue?: any) => {
                 const configs: any = {
                     'vaultRoot': 'notes',
-                    'noteExtension': '.md',
-                    'listContinuationEnabled': true
+                    'noteExtension': '.md'
                 };
                 return configs[key] || defaultValue;
             },
