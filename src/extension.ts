@@ -82,12 +82,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     // WikiLink CompletionProvider登録
     let completionProviderDisposable: vscode.Disposable;
+    let wikiLinkCompletionProvider: WikiLinkCompletionProvider;
     try {
-        const wikiLinkCompletionProvider = new WikiLinkCompletionProvider(configManager);
+        wikiLinkCompletionProvider = new WikiLinkCompletionProvider(configManager);
         completionProviderDisposable = vscode.languages.registerCompletionItemProvider(
             { scheme: 'file', language: 'markdown' },
             wikiLinkCompletionProvider,
-            '[' // Trigger character
+            '[', // Trigger character for opening bracket
+            '/'  // Trigger character for directory path separator
         );
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register WikiLinkCompletionProvider');
@@ -181,6 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
         const subscriptions = [
             linkProviderDisposable,
             completionProviderDisposable,
+            wikiLinkCompletionProvider, // Add the provider instance for proper cleanup
             ...commands
         ];
 
