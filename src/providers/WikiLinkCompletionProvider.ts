@@ -63,11 +63,36 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         vaultRoot: string | undefined,
         extension: string
     ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]> {
-        const cacheKey = `${workspaceFolder.uri.fsPath}:${vaultRoot || ''}`;
+        const cacheKey = `${workspaceFolder.uri.fsPath}:${vaultRoot || ''}:${extension}`;
 
-        if (this.noteCache && this.noteCache.has(cacheKey)) {
-            return this.noteCache.get(cacheKey)!;
+        // ensure cache container exists
+        if (!this.noteCache) {
+            this.noteCache = new Map();
         }
+
+        // If the key changed (workspace/vault/extension), rebuild watcher and invalidate cache
+        if (!this.fileWatcher || this.fileWatcher !== cacheKey) {
+            // clear any cached notes for the old watcher key
+            if (this.fileWatcher && this.noteCache.has(this.fileWatcher)) {
+                this.noteCache.delete(this.fileWatcher);
+            }
+
+            // dispose previous watcher if present
+            if (this.fileWatcher) {
+                try { this.fileWatcher.dispose(); } catch { /* ignore */ }
+                this.fileWatcher = undefined;
+            }
+
+            // create new watcher using the extension-aware glob
+            const pattern = new vscode.RelativePattern(workspaceFolder, `**/*${extension}`);
+            this.fileWatcher = workspaceFolder.createFileSystemWatcher(pattern);
+
+            // set new watcher key and initialize cache entry
+            this.fileWatcher = cacheKey;
+            this.noteCache.set(cacheKey, []);
+        }
+
+        const notes = this.noteCache.get(cacheKey) || [];
 
         // Load all notes
         const allNotes = await NoteFinder.getAllNotes(workspaceFolder, vaultRoot, extension);
