@@ -71,6 +71,7 @@ export function markTaskCompleted(content: string, lineIndex: number, completion
  * Returns an object with newContent and the inserted line index.
  */
 export function insertIntoSection(content: string, sectionName: string, lineText: string): { newContent: string; line: number } {
+    const newline = content.includes('\r\n') ? '\r\n' : '\n';
     const lines = content.split(/\r?\n/);
 
     const escaped = sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -110,5 +111,6 @@ export function insertIntoSection(content: string, sectionName: string, lineText
 
     lines.splice(insertLine, 0, lineText);
 
-    return { newContent: lines.join('\n'), line: insertLine };
+    return { newContent: lines.join(newline), line: insertLine };
+}
 }
