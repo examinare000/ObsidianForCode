@@ -49,15 +49,21 @@ export class NoteFinder {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
 
             if (files.length > 0) {
-                // Return the first match (prioritize root level if multiple matches)
-                const sortedFiles = files.sort((a, b) => {
-                    const aDepth = a.fsPath.split(path.sep).length;
-                    const bDepth = b.fsPath.split(path.sep).length;
-                    return aDepth - bDepth;
+                // Normalize relative paths to use forward slashes and sort by depth
+                const notes = files.map(file => {
+                    const rel = path.relative(searchBase, file.fsPath).split(path.sep).join('/');
+                    return { uri: file, rel };
                 });
 
-                const file = sortedFiles[0];
-                const relativePath = path.relative(searchBase, file.fsPath);
+                notes.sort((a, b) => {
+                    const aDepth = a.rel.split('/').length;
+                    const bDepth = b.rel.split('/').length;
+                    if (aDepth !== bDepth) return aDepth - bDepth;
+                    return a.rel.localeCompare(b.rel);
+                });
+
+                const file = notes[0].uri;
+                const relativePath = notes[0].rel;
                 return {
                     title: path.basename(file.fsPath, extension),
                     uri: file,
