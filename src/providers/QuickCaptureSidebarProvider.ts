@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as vscode from 'vscode';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { DailyNoteManager } from '../managers/DailyNoteManager';
@@ -8,6 +7,7 @@ import { VscodeFileWriter } from '../services/FileWriter';
 export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
     public static readonly viewId = 'obsd.quickCapture';
     private view?: vscode.WebviewView;
+    private taskServiceInstance?: TaskService;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
@@ -17,13 +17,17 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
 
   private get taskService(): TaskService {
     // lazy init with VscodeFileWriter to allow easier testing/mocking
-    if (!(this as any)._taskService) {
-      (this as any)._taskService = new TaskService(new VscodeFileWriter());
+    if (!this.taskServiceInstance) {
+      this.taskServiceInstance = new TaskService(new VscodeFileWriter());
     }
-    return (this as any)._taskService;
+    return this.taskServiceInstance;
   }
 
-    resolveWebviewView(webviewView: vscode.WebviewView) {
+    resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        _context: vscode.WebviewViewResolveContext<unknown>,
+        _token: vscode.CancellationToken
+    ): void {
         this.view = webviewView;
 
         webviewView.webview.options = {
@@ -33,11 +37,16 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
 
         webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-        webviewView.webview.onDidReceiveMessage(async (msg) => {
+        type CaptureAddMessage = { command: 'capture:add'; content?: string };
+        type RequestTasksMessage = { command: 'request:tasks' };
+        type TaskCompleteMessage = { command: 'task:complete'; payload?: { uri: string; line: number } };
+        type QuickCaptureMessage = CaptureAddMessage | RequestTasksMessage | TaskCompleteMessage;
+
+        webviewView.webview.onDidReceiveMessage(async (msg: QuickCaptureMessage) => {
             try {
                 switch (msg.command) {
                     case 'capture:add': {
-                        const text: string = msg.content || '';
+                        const text: string = (msg as CaptureAddMessage).content || '';
                         if (!text || text.trim() === '') {
                             webviewView.webview.postMessage({ command: 'error', message: 'Empty capture' });
                             return;
@@ -69,7 +78,7 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
               }
 
               // Use a simple glob to list markdown files under workspace/dailynotes
-              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri.fsPath, '**/*.md'), '**/node_modules/**', 200);
+              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri, '**/*.md'), '**/node_modules/**', 200);
               const tasks = await this.taskService.collectTasksFromUris(files);
               webviewView.webview.postMessage({ command: 'tasks:update', tasks });
             } catch (err) {
@@ -79,7 +88,7 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
                     }
           case 'task:complete': {
             // payload: { uri: string, line: number }
-            const payload = msg.payload || {};
+            const payload = (msg as TaskCompleteMessage).payload || { uri: '', line: NaN };
             try {
               const uriStr = payload.uri;
               const line = Number(payload.line);
@@ -96,7 +105,7 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
                 webviewView.webview.postMessage({ command: 'tasks:update', tasks: [] });
                 return;
               }
-              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri.fsPath, '**/*.md'), '**/node_modules/**', 200);
+              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri, '**/*.md'), '**/node_modules/**', 200);
               const tasks = await this.taskService.collectTasksFromUris(files);
               webviewView.webview.postMessage({ command: 'tasks:update', tasks });
             } catch (err) {
@@ -202,7 +211,7 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
     }
 }
 
-function getNonce() {
+function getNonce(): string {
     let text = '';
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     for (let i = 0; i < 32; i++) {
