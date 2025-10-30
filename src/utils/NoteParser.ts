@@ -35,6 +35,7 @@ export function extractTasks(content: string): TaskItem[] {
  * Returns the new content.
  */
 export function markTaskCompleted(content: string, lineIndex: number, completionDate: string): string {
+    const newline = content.includes('\r\n') ? '\r\n' : '\n';
     const lines = content.split(/\r?\n/);
     if (lineIndex < 0 || lineIndex >= lines.length) return content;
 
@@ -60,7 +61,7 @@ export function markTaskCompleted(content: string, lineIndex: number, completion
     const newLine = `${prefix}[x] ${rest} [completion: ${completionDate}]`;
     lines[lineIndex] = newLine;
 
-    return lines.join('\n');
+    return lines.join(newline);
 }
 
 /**
