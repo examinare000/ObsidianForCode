@@ -184,4 +184,75 @@ export class DailyNoteManager {
             await vscode.window.showTextDocument(dailyNoteUri);
         }
     }
+
+    /**
+     * Appends a captured line to a named section inside today's daily note.
+     * If the daily note or the section does not exist, they will be created.
+     *
+     * @param workspaceFolder - The VS Code workspace folder
+     * @param content - The content to append (single-line)
+     * @param sectionName - Optional section heading to append into. If omitted, uses ConfigurationManager.getCaptureSectionName().
+     * @param date - Optional date for which daily note to append (defaults to today)
+     * @returns Promise resolving to the inserted line index and target URI
+     */
+    async appendToSection(
+        workspaceFolder: vscode.WorkspaceFolder,
+        content: string,
+        sectionName?: string,
+        date: Date = new Date()
+    ): Promise<{ uri: vscode.Uri; line: number }> {
+        const targetSection = sectionName || this.configManager.getCaptureSectionName();
+        const dailyUri = this.getDailyNotePath(workspaceFolder, date);
+
+        // Ensure file exists (creates if necessary)
+        await this.openOrCreateDailyNote(workspaceFolder, date);
+
+        // Read file
+        const raw = await vscode.workspace.fs.readFile(dailyUri);
+        const text = new TextDecoder().decode(raw);
+        const lines = text.split(/\r?\n/);
+
+        // Find the section heading (match heading lines like # Heading or ## Heading)
+        const escaped = targetSection.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const headingRegex = new RegExp(`^#{1,6}\\s*${escaped}\\s*$`, 'i');
+
+        let insertLine = lines.length; // default append at end
+        let found = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            if (headingRegex.test(lines[i])) {
+                found = true;
+                // find next heading index
+                let j = i + 1;
+                for (; j < lines.length; j++) {
+                    if (/^#{1,6}\s+/.test(lines[j])) {
+                        break;
+                    }
+                }
+                insertLine = j; // insert before next heading (or at EOF)
+                break;
+            }
+        }
+
+        // If section not found, append heading and then the content
+        if (!found) {
+            lines.push('');
+            lines.push(`## ${targetSection}`);
+            insertLine = lines.length; // after the new heading
+        }
+
+        // Create the capture line with timestamp
+        const timeFormat = this.configManager.getTimeFormat();
+        const timeString = this.dateTimeFormatter.formatTime(new Date(), timeFormat);
+        const lineText = `- [ ] ${timeString} — ${content}`;
+
+        // Insert the new line
+        lines.splice(insertLine, 0, lineText);
+
+        // Write back
+        const newText = lines.join('\n');
+        await vscode.workspace.fs.writeFile(dailyUri, new TextEncoder().encode(newText));
+
+        return { uri: dailyUri, line: insertLine };
+    }
 }
