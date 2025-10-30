@@ -22,6 +22,7 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
     private configManager: ConfigurationManager;
     private noteCache: Map<string, { title: string; uri: vscode.Uri; relativePath: string }[]> | null = null;
     private fileWatcher: vscode.FileSystemWatcher | null = null;
+    private watcherKey: string | null = null;
 
     /**
      * Creates a new WikiLinkCompletionProvider instance.
@@ -71,25 +72,26 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         }
 
         // If the key changed (workspace/vault/extension), rebuild watcher and invalidate cache
-        if (!this.fileWatcher || this.fileWatcher !== cacheKey) {
+        if (!this.fileWatcher || this.watcherKey !== cacheKey) {
             // clear any cached notes for the old watcher key
-            if (this.fileWatcher && this.noteCache.has(this.fileWatcher)) {
-                this.noteCache.delete(this.fileWatcher);
+            if (this.watcherKey && this.noteCache.has(this.watcherKey)) {
+                this.noteCache.delete(this.watcherKey);
             }
 
             // dispose previous watcher if present
             if (this.fileWatcher) {
                 try { this.fileWatcher.dispose(); } catch { /* ignore */ }
-                this.fileWatcher = undefined;
+                this.fileWatcher = null;
             }
 
             // create new watcher using the extension-aware glob
             const pattern = new vscode.RelativePattern(workspaceFolder, `**/*${extension}`);
-            this.fileWatcher = workspaceFolder.createFileSystemWatcher(pattern);
+            this.fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+            this.fileWatcher.onDidCreate(() => this.clearCache());
+            this.fileWatcher.onDidDelete(() => this.clearCache());
 
-            // set new watcher key and initialize cache entry
-            this.fileWatcher = cacheKey;
-            this.noteCache.set(cacheKey, []);
+            // set new watcher key
+            this.watcherKey = cacheKey;
         }
 
         const notes = this.noteCache.get(cacheKey) || [];
@@ -125,6 +127,7 @@ export class WikiLinkCompletionProvider implements vscode.CompletionItemProvider
         if (this.fileWatcher) {
             this.fileWatcher.dispose();
             this.fileWatcher = null;
+            this.watcherKey = null;
         }
         this.clearCache();
     }

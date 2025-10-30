@@ -30,6 +30,9 @@ export interface ObsdConfiguration {
     readonly dailyNoteEnabled: boolean;
     readonly listContinuationEnabled: boolean;
     readonly searchSubdirectories: boolean;
+    readonly notesFolder: string;
+    readonly dailyNoteFormat: string;
+    readonly captureSectionName: string;
 }
 
 /**
@@ -174,6 +177,27 @@ export class ConfigurationManager {
     }
 
     /**
+     * Gets the notes folder (relative to vault root) used for daily notes and other notes.
+     */
+    getNotesFolder(): string {
+        return this.config.get<string>('notesFolder', 'dailynotes');
+    }
+
+    /**
+     * Gets the daily note file name format (e.g. "YYYY-MM-DD.md").
+     */
+    getDailyNoteFormat(): string {
+        return this.config.get<string>('dailyNoteFormat', 'YYYY-MM-DD.md');
+    }
+
+    /**
+     * Gets the section heading name inside daily notes where captured items will be appended.
+     */
+    getCaptureSectionName(): string {
+        return this.config.get<string>('captureSectionName', 'Quick Notes');
+    }
+
+    /**
      * Checks if daily note functionality is enabled.
      *
      * @returns True if daily notes are enabled (default: true)
@@ -218,6 +242,10 @@ export class ConfigurationManager {
             dailyNoteEnabled: this.getDailyNoteEnabled(),
             listContinuationEnabled: this.getListContinuationEnabled(),
             searchSubdirectories: this.getSearchSubdirectories()
+            ,
+            notesFolder: this.getNotesFolder(),
+            dailyNoteFormat: this.getDailyNoteFormat(),
+            captureSectionName: this.getCaptureSectionName()
         };
     }
 

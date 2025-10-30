@@ -31,7 +31,8 @@
     "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
   },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:obsd.openQuickCapture"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
@@ -60,8 +61,21 @@
         "command": "obsd.test",
         "title": "Obsidian for Code: Test Command",
         "category": "Obsidian for Code"
+      },
+      {
+        "command": "obsd.openQuickCapture",
+        "title": "Obsidian for Code: Open Quick Capture",
+        "category": "Obsidian for Code"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "obsd.quickCapture",
+          "name": "Quick Capture"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "obsd.openOrCreateWikiLink",
@@ -77,6 +91,11 @@
       {
         "command": "obsd.insertTime",
         "key": "alt+t",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "obsd.openQuickCapture",
+        "key": "ctrl+alt+m",
         "when": "editorTextFocus"
       }
     ],
@@ -118,15 +137,21 @@
           "default": "",
           "description": "New note template"
         },
+        "obsd.notesFolder": {
+          "type": "string",
+          "default": "dailynotes",
+          "description": "Daily notes directory path (relative to vault root)"
+        },
         "obsd.dailyNoteFormat": {
           "type": "string",
-          "default": "yyyy-MM-dd",
-          "description": "Daily note filename date format (used to generate daily note file names). Use a Windows-safe format (avoid path separators)."
+          "default": "YYYY-MM-DD.md",
+          "description": "Daily note file name format"
         },
         "obsd.captureSectionName": {
           "type": "string",
           "default": "Quick Capture",
-          "description": "Section heading in the daily note where Quick Capture entries are appended."
+          "description": "Section heading name inside the daily note to append captured items"
+        }
         }
       }
     }

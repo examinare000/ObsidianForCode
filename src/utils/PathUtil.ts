@@ -33,7 +33,20 @@ export class PathUtil {
      * ```
      */
     static isAbsolutePath(pathString: string): boolean {
-        return path.isAbsolute(pathString);
+        if (!pathString || pathString.length === 0) return false;
+
+        // Unix-style absolute path
+        if (pathString.startsWith('/')) return true;
+
+        // Windows drive-letter absolute path: C:\ or C:/
+        if (/^[A-Za-z]:[\\/]/.test(pathString)) return true;
+
+        // Windows UNC path must be like \\server\share (i.e. two path segments after UNC)
+        // require at least "\\server\share"
+        const uncMatch = pathString.match(/^\\\\([^\\]+)\\([^\\\/]+)([\\/].*)?$/);
+        if (uncMatch) return true;
+
+        return false;
     }
 
     /**

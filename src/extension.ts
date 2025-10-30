@@ -18,6 +18,7 @@ import { ListContinuationProvider } from './providers/ListContinuationProvider';
 import { DailyNoteManager } from './managers/DailyNoteManager';
 import { PathUtil } from './utils/PathUtil';
 import { NoteFinder } from './utils/NoteFinder';
+import { QuickCaptureSidebarProvider } from './providers/QuickCaptureSidebarProvider';
 
 /**
  * Activates the Obsidian for Code extension.
@@ -146,6 +147,26 @@ export function activate(context: vscode.ExtensionContext) {
         commands.push(previewCommand);
     } catch (error) {
         errors.push(`Failed to register preview: ${error}`);
+    }
+
+    // Quick Capture sidebar provider registration
+    try {
+        const quickCaptureProvider = new QuickCaptureSidebarProvider(context, configManager, dailyNoteManager);
+        const providerDisposable = vscode.window.registerWebviewViewProvider(QuickCaptureSidebarProvider.viewId, quickCaptureProvider);
+        context.subscriptions.push(providerDisposable);
+    } catch (error) {
+        errors.push(`Failed to register QuickCaptureSidebarProvider: ${error}`);
+    }
+
+    // openQuickCapture コマンド (reveal Explorer where the view is contributed)
+    try {
+        const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
+            // Focus Explorer view (where Quick Capture view is contributed in package.json)
+            await vscode.commands.executeCommand('workbench.view.explorer');
+        });
+        commands.push(openQuickCaptureCommand);
+    } catch (error) {
+        errors.push(`Failed to register openQuickCapture: ${error}`);
     }
 
     // DailyNoteコマンドは設定により条件付きで登録
