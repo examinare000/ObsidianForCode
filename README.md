@@ -140,7 +140,4 @@ Quick Capture はサイドバーから素早くメモやタスクを取り込み
 MIT License
 
 
-### Quick Capture設定
-- `obsd.dailyNoteFormat` - デイリーノートのファイル名日付フォーマット (デフォルト: `yyyy-MM-dd`) - Windowsで安全な形式を使用（パス区切りは不可）
-- `obsd.captureSectionName` - クイックキャプチャの追記先セクション見出し (デフォルト: `Quick Capture`)
 
