@@ -60,7 +60,9 @@ export class NoteFinder {
                 notes.sort((a, b) => {
                     const aDepth = a.rel.split('/').length;
                     const bDepth = b.rel.split('/').length;
-                    if (aDepth !== bDepth) return aDepth - bDepth;
+                    if (aDepth !== bDepth) {
+                        return aDepth - bDepth;
+                    }
                     return a.rel.localeCompare(b.rel);
                 });
 

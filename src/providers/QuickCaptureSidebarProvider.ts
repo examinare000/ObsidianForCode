@@ -7,7 +7,7 @@ import { VscodeFileWriter } from '../services/FileWriter';
 
 export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
     public static readonly viewId = 'obsd.quickCapture';
-    private _view?: vscode.WebviewView;
+    private view?: vscode.WebviewView;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
@@ -24,7 +24,7 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
   }
 
     resolveWebviewView(webviewView: vscode.WebviewView) {
-        this._view = webviewView;
+        this.view = webviewView;
 
         webviewView.webview.options = {
             enableScripts: true,

@@ -33,18 +33,26 @@ export class PathUtil {
      * ```
      */
     static isAbsolutePath(pathString: string): boolean {
-        if (!pathString || pathString.length === 0) return false;
+        if (!pathString || pathString.length === 0) {
+            return false;
+        }
 
         // Unix-style absolute path
-        if (pathString.startsWith('/')) return true;
+        if (pathString.startsWith('/')) {
+            return true;
+        }
 
         // Windows drive-letter absolute path: C:\ or C:/
-        if (/^[A-Za-z]:[\\/]/.test(pathString)) return true;
+        if (/^[A-Za-z]:[\\/]/.test(pathString)) {
+            return true;
+        }
 
         // Windows UNC path must be like \\server\share (i.e. two path segments after UNC)
         // require at least "\\server\share"
         const uncMatch = pathString.match(/^\\\\([^\\]+)\\([^\\\/]+)([\\/].*)?$/);
-        if (uncMatch) return true;
+        if (uncMatch) {
+            return true;
+        }
 
         return false;
     }
@@ -86,7 +94,7 @@ export class PathUtil {
         const baseNameUpper = baseName.toUpperCase();
         // 予約名と完全一致、または予約名で始まり直後が非英数字の場合
         const isReserved = reservedNames.some(reserved => {
-            if (baseNameUpper === reserved) return true;
+            if (baseNameUpper === reserved) { return true; }
             if (baseNameUpper.startsWith(reserved)) {
                 const nextChar = baseName.charAt(reserved.length);
                 // 予約名の後に英数字以外が続く場合（例: CON-file, CON:file）

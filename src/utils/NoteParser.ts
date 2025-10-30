@@ -37,7 +37,9 @@ export function extractTasks(content: string): TaskItem[] {
 export function markTaskCompleted(content: string, lineIndex: number, completionDate: string): string {
     const newline = content.includes('\r\n') ? '\r\n' : '\n';
     const lines = content.split(/\r?\n/);
-    if (lineIndex < 0 || lineIndex >= lines.length) return content;
+    if (lineIndex < 0 || lineIndex >= lines.length) {
+        return content;
+    }
 
     const line = lines[lineIndex];
 
@@ -112,5 +114,4 @@ export function insertIntoSection(content: string, sectionName: string, lineText
     lines.splice(insertLine, 0, lineText);
 
     return { newContent: lines.join(newline), line: insertLine };
-}
 }
