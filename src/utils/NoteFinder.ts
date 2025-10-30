@@ -34,9 +34,11 @@ export class NoteFinder {
         extension: string = '.md'
     ): Promise<{ title: string; uri: vscode.Uri; relativePath: string } | null> {
         // Construct the search pattern
-        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+        const searchBaseFs = vaultRoot && vaultRoot.trim() !== ''
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
             : workspaceFolder.uri.fsPath;
+        // Normalize to POSIX-style for consistent testing and matching
+        const searchBase = searchBaseFs.split(path.sep).join('/');
 
         // Create glob pattern for recursive search
         const pattern = new vscode.RelativePattern(
@@ -116,7 +118,7 @@ export class NoteFinder {
             // Check if any directory in the path matches the prefix
             let directoryMatches = false;
             if (!directoryPath && filePrefix) {
-                const pathSegments = note.relativePath.split(path.sep);
+                const pathSegments = note.relativePath.split('/');
                 for (let i = 0; i < pathSegments.length - 1; i++) {
                     if (pathSegments[i].toLowerCase().startsWith(filePrefix.toLowerCase())) {
                         directoryMatches = true;
@@ -128,7 +130,7 @@ export class NoteFinder {
             if (fileNameMatches || directoryMatches) {
                 // If directory path is specified, ensure the file is in that directory (case-insensitive)
                 if (directoryPath) {
-                    const normalizedRelativePath = note.relativePath.split(path.sep).join('/').toLowerCase();
+                    const normalizedRelativePath = note.relativePath.toLowerCase();
                     const normalizedDirectoryPath = directoryPath.split(path.sep).join('/').toLowerCase();
                     if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
                         continue;
@@ -160,8 +162,8 @@ export class NoteFinder {
                 return aOrder - bOrder;
             }
 
-            const aDepth = a.relativePath.split(path.sep).length;
-            const bDepth = b.relativePath.split(path.sep).length;
+            const aDepth = a.relativePath.split('/').length;
+            const bDepth = b.relativePath.split('/').length;
             if (aDepth !== bDepth) {
                 return aDepth - bDepth;
             }
@@ -191,9 +193,10 @@ export class NoteFinder {
         extension: string = '.md',
         maxResults: number = 50
     ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]> {
-        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+        const searchBaseFs = vaultRoot && vaultRoot.trim() !== ''
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
             : workspaceFolder.uri.fsPath;
+        const searchBase = searchBaseFs.split(path.sep).join('/');
 
         // Parse directory path and file prefix from the input
         const lastSlashIndex = prefix.lastIndexOf('/');
@@ -217,8 +220,8 @@ export class NoteFinder {
 
         if (directoryPath) {
             // Validate and constrain directoryPath to prevent path traversal
-            const candidatePath = path.resolve(searchBase, directoryPath);
-            const normalizedBase = path.resolve(searchBase);
+            const candidatePath = path.resolve(searchBaseFs, directoryPath);
+            const normalizedBase = path.resolve(searchBaseFs);
             const relativeToBase = path.relative(normalizedBase, candidatePath);
 
             // Ensure candidatePath is a descendant of searchBase
@@ -227,8 +230,8 @@ export class NoteFinder {
                 return [];
             }
 
-            // Search only in the specified directory
-            searchPath = candidatePath;
+            // Search only in the specified directory (normalized to POSIX-style string)
+            searchPath = candidatePath.split(path.sep).join('/');
             globPattern = narrowedGlob;
         } else {
             // Search in all directories
@@ -245,7 +248,7 @@ export class NoteFinder {
             const notes = files.map(file => ({
                 title: path.basename(file.fsPath, extension),
                 uri: file,
-                relativePath: path.relative(searchBase, file.fsPath)
+                relativePath: path.relative(searchBaseFs, file.fsPath).split(path.sep).join('/')
             }));
 
             // Use the static helper method to filter and sort
@@ -275,7 +278,7 @@ export class NoteFinder {
             : workspaceFolder.uri.fsPath;
 
         const pattern = new vscode.RelativePattern(
-            searchBase,
+            searchBase.split(path.sep).join('/'),
             `**/*${extension}`
         );
 
@@ -283,7 +286,7 @@ export class NoteFinder {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
             return files.map(file => {
                 const fileName = path.basename(file.fsPath, extension);
-                const relativePath = path.relative(searchBase, file.fsPath);
+                const relativePath = path.relative(searchBase, file.fsPath).split(path.sep).join('/');
                 return {
                     title: fileName,
                     uri: file,
