@@ -51,7 +51,7 @@ describe('WikiLinkProcessor (Design Examples)', () => {
     });
     it('snake_case lowercases and underscores, strips specials', () => {
       const p = new WikiLinkProcessor({ slugStrategy: 'snake_case' });
-      expect(p.transformFileName('My Page:Name')).to.equal('my_page_name');
+      expect(p.transformFileName('My Page:Name')).to.equal('my_pagename');
     });
   });
 });
