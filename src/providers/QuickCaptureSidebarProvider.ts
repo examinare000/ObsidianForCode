@@ -2,6 +2,8 @@
 import * as vscode from 'vscode';
 import { ConfigurationManager } from '../managers/ConfigurationManager';
 import { DailyNoteManager } from '../managers/DailyNoteManager';
+import { TaskService } from '../services/TaskService';
+import { VscodeFileWriter } from '../services/FileWriter';
 
 export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
     public static readonly viewId = 'obsd.quickCapture';
@@ -12,6 +14,14 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
         private readonly configManager: ConfigurationManager,
         private readonly dailyNoteManager?: DailyNoteManager
     ) {}
+
+  private get taskService(): TaskService {
+    // lazy init with VscodeFileWriter to allow easier testing/mocking
+    if (!(this as any)._taskService) {
+      (this as any)._taskService = new TaskService(new VscodeFileWriter());
+    }
+    return (this as any)._taskService;
+  }
 
     resolveWebviewView(webviewView: vscode.WebviewView) {
         this._view = webviewView;
@@ -50,10 +60,46 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
                     }
 
                     case 'request:tasks': {
-                        // For MVP return empty list; task extraction implemented later
-                        webviewView.webview.postMessage({ command: 'tasks:update', tasks: [] });
+            // Collect open tasks from workspace files and send to webview
+            try {
+              const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+              if (!workspaceFolder) {
+                webviewView.webview.postMessage({ command: 'tasks:update', tasks: [] });
+                return;
+              }
+
+              // Use a simple glob to list markdown files under workspace/dailynotes
+              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri.fsPath, '**/*.md'), '**/node_modules/**', 200);
+              const tasks = await this.taskService.collectTasksFromUris(files);
+              webviewView.webview.postMessage({ command: 'tasks:update', tasks });
+            } catch (err) {
+              webviewView.webview.postMessage({ command: 'tasks:update', tasks: [] });
+            }
                         return;
                     }
+          case 'task:complete': {
+            // payload: { uri: string, line: number }
+            const payload = msg.payload || {};
+            try {
+              const uriStr = payload.uri;
+              const line = Number(payload.line);
+              if (!uriStr || Number.isNaN(line)) {
+                webviewView.webview.postMessage({ command: 'error', message: 'Invalid task complete payload' });
+                return;
+              }
+              const uri = vscode.Uri.file(uriStr);
+              const today = new Date().toISOString().slice(0, 10);
+              await this.taskService.completeTask(uri, line, today);
+              // refresh tasks
+              const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri.fsPath, '**/*.md'), '**/node_modules/**', 200);
+              const tasks = await this.taskService.collectTasksFromUris(files);
+              webviewView.webview.postMessage({ command: 'tasks:update', tasks });
+            } catch (err) {
+              webviewView.webview.postMessage({ command: 'error', message: err instanceof Error ? err.message : String(err) });
+            }
+            return;
+          }
                 }
             } catch (e) {
                 webviewView.webview.postMessage({ command: 'error', message: e instanceof Error ? e.message : String(e) });
@@ -116,7 +162,24 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
           if (tasks.length === 0) {
             tasksList.innerText = '(no tasks)';
           } else {
-            tasksList.innerHTML = tasks.map(t => `<div class=\"task\">${escapeHtml(t.text)} <button data-uri=\"${t.uri}\">Complete</button></div>`).join('');
+            // Build DOM nodes to avoid nested template/backtick issues
+            tasksList.innerHTML = '';
+            tasks.forEach(t => {
+              const div = document.createElement('div');
+              div.className = 'task';
+              const span = document.createElement('span');
+              span.textContent = t.text;
+              const btn = document.createElement('button');
+              btn.textContent = 'Complete';
+              btn.dataset.uri = t.uri;
+              btn.dataset.line = String(t.line);
+              btn.addEventListener('click', () => {
+                vscode.postMessage({ command: 'task:complete', payload: { uri: t.uri, line: t.line } });
+              });
+              div.appendChild(span);
+              div.appendChild(btn);
+              tasksList.appendChild(div);
+            });
           }
           break;
         case 'error':
