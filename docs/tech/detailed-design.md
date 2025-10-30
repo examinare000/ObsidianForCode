@@ -2301,3 +2301,71 @@ export function activate(context: vscode.ExtensionContext) {
 **文書バージョン**: 1.6
 **最終更新**: 2025-10-01
 **更新内容**: Enhanced Note Features設計を追加
+
+## 18. Quick Capture Sidebar (クイックキャプチャサイドバー)
+
+### 18.1 概要
+右サイドバーにクイック入力 UI を提供し、短いメモを当日の DailyNote の特定セクションへタイムスタンプ付きで自動追記する機能を追加する。加えて、Vault 内の未完了タスクを収集して一覧表示し、ワンクリックで完了・編集できるインタラクションを提供する。
+
+### 18.2 主要な設計決定
+- 実装方式: VS Code `WebviewViewProvider` を使用して右サイドバーを実装する。
+- 設定管理: 既存の `ConfigurationManager`（設定プレフィックス: `obsd`）に以下のキーを追加する。これらは `package.json` の `contributes.configuration` に登録する。
+    - `obsd.vaultPath` (string)
+    - `obsd.notesFolder` (string) — daily notes のディレクトリ
+    - `obsd.dailyNoteFormat` (string) — 例: `YYYY-MM-DD.md`
+    - `obsd.captureSectionName` (string) — 追記対象の見出し名（例: `Quick Notes`）
+
+### 18.3 コントラクト（小さく明確に）
+- 入力: サイドバーのテキスト入力（短文）、ユーザ操作（追加、完了、編集）
+- 出力: 当日 DailyNote の指定セクション末尾に以下の形式で1行を追記する: `- [ ] HH:mm — {content}  (from: {source})`
+- 副作用: 元ノートのタスク完了時に該当行へ `[completion: YYYY-MM-DD]` を付記し、チェックボックスを `- [x]` に更新する。
+- エラー: Vault 未設定や I/O エラー時は `vscode.window.showErrorMessage` でユーザーに通知する。
+
+### 18.4 Webview と拡張側のメッセージプロトコル
+- Webview → Extension:
+    - `capture:add` { content: string, source?: string }
+    - `task:complete` { uri: string, line: number, text: string }
+    - `task:edit` { uri: string, line: number, newText: string }
+    - `request:tasks` {}
+
+- Extension → Webview:
+    - `tasks:update` { tasks: TaskItem[] }
+    - `capture:ok` { timestamp: string }
+    - `error` { message: string }
+
+TaskItem 型 (JSON 表現):
+```
+{ "uri": string, "line": number, "text": string, "file": string }
+```
+
+### 18.5 ファイル操作の設計方針
+- 当日の DailyNote の検出・作成は `DailyNoteManager` を再利用する。存在しない場合はテンプレートに従って作成する。
+- 指定セクションの末尾への追記は、ファイルを読み込み、見出し（指定名）を見つけ、その見出しブロックの終端直前に行を挿入した上で `workspace.fs.writeFile` で上書きする。見出しが見つからない場合は、ファイル末尾に見出しと挿入内容を付与する。
+- タスク完了処理は元ノートの該当行をテキスト単位で置換し、末尾に `[completion: YYYY-MM-DD]` を付け、チェックボックスを `- [x]` にする。
+
+### 18.6 ノート内タスク抽出ロジック
+- vault 配下の `.md` ファイルを `NoteFinder.getAllNotes()` で列挙し、正規表現でチェックボックス行を抽出する（例: `/^\\s*[-*+]\\s+\\[\\s*\\]\\s+(.*)$/`）。
+- 取得時はテキストとファイル URI、行番号を返す。表示は最大 N 件 (設定可能) を上限にする。
+
+### 18.7 UI 詳細（最小実装仕様）
+- 上部: 1行入力フィールド、送信ボタン（Enterで送信、Shift+Enterで改行）
+- 中央: 当日の指定セクションのプレビュー（最後5行）と「全開く」ボタン
+- 下部: 未完了タスクリスト（ファイル名と行のプレーン表示）。各アイテムに「完了」ボタンと「編集」ボタンを配置
+
+### 18.8 テスト計画
+- 単体テスト: `DailyNoteManager.appendToSection()` のユニットテスト（既存のテンプレート・見出し有無・競合ケース）
+- ユーティリティテスト: `NoteParser.extractTasks()`、`NoteParser.markTaskCompleted()` のテスト
+- E2E（手動）: サイドバーで入力 → DailyNote に追記、タスク完了ボタン→元ノートの置換検証
+
+### 18.9 既存機能との共存
+- DailyNote の作成・補完・内部リンク機能は変更しない。新 API は既存クラスに最小限の public メソッドを追加するのみ。
+
+### 18.10 未解決事項 / 将来の改善
+- サイドバーのパフォーマンス最適化（大規模 Vault のタスク列挙）: インデックス化/バックグラウンド更新を検討
+- タスク行のより堅牢な識別方法（行ID or edit-hash）: 現状はテキストマッチ方式
+
+---
+
+**文書バージョン**: 1.7
+**最終更新**: 2025-10-30
+**更新内容**: Quick Capture Sidebar セクション追加
