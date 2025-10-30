@@ -113,7 +113,7 @@ Quick Capture はサイドバーから素早くメモやタスクを取り込み
 
 設定キー:
 
-- `obsd.notesFolder` - ノートの格納フォルダ（デフォルト: `dailynotes`）
+- `obsd.dailyNotePath` - ノートの格納フォルダ（デフォルト: `dailynotes`）
 - `obsd.dailyNoteFormat` - デイリーノートのファイル名フォーマット（例: `YYYY-MM-DD.md`）
 - `obsd.captureSectionName` - クイックキャプチャを書き込むセクション名（デフォルト: `Quick Notes`）
 
@@ -138,6 +138,5 @@ Quick Capture はサイドバーから素早くメモやタスクを取り込み
 ## ライセンス
 
 MIT License
-
 
 
