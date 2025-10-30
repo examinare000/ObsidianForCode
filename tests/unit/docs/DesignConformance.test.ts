@@ -14,12 +14,13 @@ describe('Design Conformance (Public Surface)', () => {
 
   it('commands match the documented set', () => {
     const expected = [
-      'obsd.openOrCreateWikiLink',
+      'obsd.handleEnterKey',
       'obsd.insertDate',
       'obsd.insertTime',
-      'obsd.preview',
       'obsd.openDailyNote',
-      'obsd.handleEnterKey',
+      'obsd.openOrCreateWikiLink',
+      'obsd.openQuickCapture',
+      'obsd.preview',
     ].sort();
 
     const actual: string[] = (pkg.contributes?.commands || []).map((c: any) => c.command).sort();
@@ -32,6 +33,7 @@ describe('Design Conformance (Public Surface)', () => {
       'onCommand:obsd.openOrCreateWikiLink',
       'onCommand:obsd.insertDate',
       'onCommand:obsd.insertTime',
+      'onCommand:obsd.openQuickCapture',
       'onCommand:obsd.preview',
       'onCommand:obsd.openDailyNote',
       'onCommand:obsd.handleEnterKey',
@@ -75,6 +77,9 @@ describe('Design Conformance (Public Surface)', () => {
       'obsd.dailyNoteTemplate',
       'obsd.dailyNotePath',
       'obsd.dailyNoteEnabled',
+      'obsd.notesFolder',
+      'obsd.dailyNoteFormat',
+      'obsd.captureSectionName',
       'obsd.listContinuationEnabled',
       'obsd.searchSubdirectories',
       'obsd.dailyNoteKeybindingGuide',
@@ -87,6 +92,9 @@ describe('Design Conformance (Public Surface)', () => {
     expect(props['obsd.timeFormat'].default).to.be.a('string');
     expect(props['obsd.dailyNoteEnabled'].default).to.equal(true);
     expect(props['obsd.dailyNotePath'].default).to.equal('dailynotes');
+    expect(props['obsd.notesFolder'].default).to.equal('dailynotes');
+    expect(props['obsd.dailyNoteFormat'].default).to.equal('YYYY-MM-DD.md');
+    expect(props['obsd.captureSectionName'].default).to.be.a('string');
   });
 
   it('does not contribute undocumented views', () => {
@@ -94,4 +102,3 @@ describe('Design Conformance (Public Surface)', () => {
     expect(pkg.contributes?.views).to.be.undefined;
   });
 });
-

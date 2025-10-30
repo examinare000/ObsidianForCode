@@ -36,6 +36,7 @@
     "onCommand:obsd.insertDate",
     "onCommand:obsd.insertTime",
     "onCommand:obsd.preview",
+    "onCommand:obsd.openQuickCapture",
     "onCommand:obsd.openDailyNote",
     "onCommand:obsd.handleEnterKey"
   ],
@@ -60,6 +61,11 @@
       {
         "command": "obsd.preview",
         "title": "Obsidian for Code: Preview Markdown",
+        "category": "Obsidian for Code"
+      },
+      {
+        "command": "obsd.openQuickCapture",
+        "title": "Obsidian for Code: Open Quick Capture",
         "category": "Obsidian for Code"
       },
       {
@@ -148,6 +154,21 @@
           "type": "boolean",
           "default": true,
           "description": "Enable or disable DailyNote functionality"
+        },
+        "obsd.notesFolder": {
+          "type": "string",
+          "default": "dailynotes",
+          "description": "Daily notes directory path (relative to vault root)"
+        },
+        "obsd.dailyNoteFormat": {
+          "type": "string",
+          "default": "YYYY-MM-DD.md",
+          "description": "Daily note file name format"
+        },
+        "obsd.captureSectionName": {
+          "type": "string",
+          "default": "Quick Notes",
+          "description": "Section heading name inside the daily note to append captured items"
         },
         "obsd.listContinuationEnabled": {
           "type": "boolean",
