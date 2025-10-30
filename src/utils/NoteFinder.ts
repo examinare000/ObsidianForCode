@@ -203,9 +203,9 @@ export class NoteFinder {
             return str.length > 0 && !/[*?\[\]{}]/.test(str);
         };
 
-        // Narrow glob pattern by filePrefix when safe to reduce I/O
-        // Only apply optimization when directoryPath is specified, to allow directory name matching
-        const narrowedGlob = (directoryPath && isSafeForGlob(filePrefix))
+        // Narrow the glob by filePrefix when safe to reduce I/O.
+        // Apply the same logic regardless of whether a directory is specified.
+        const narrowedGlob = isSafeForGlob(filePrefix)
             ? `**/${filePrefix}*${extension}`
             : `**/*${extension}`;
 
@@ -213,9 +213,10 @@ export class NoteFinder {
             // Validate and constrain directoryPath to prevent path traversal
             const candidatePath = path.resolve(searchBase, directoryPath);
             const normalizedBase = path.resolve(searchBase);
+            const relativeToBase = path.relative(normalizedBase, candidatePath);
 
             // Ensure candidatePath is a descendant of searchBase
-            if (!candidatePath.startsWith(normalizedBase + path.sep) && candidatePath !== normalizedBase) {
+            if (relativeToBase.startsWith('..') || path.isAbsolute(relativeToBase)) {
                 // Path traversal attempt detected, return empty results
                 return [];
             }
@@ -224,7 +225,7 @@ export class NoteFinder {
             searchPath = candidatePath;
             globPattern = narrowedGlob;
         } else {
-            // Search in all directories (original behavior)
+            // Search in all directories
             searchPath = searchBase;
             globPattern = narrowedGlob;
         }
