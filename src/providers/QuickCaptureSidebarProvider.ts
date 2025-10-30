@@ -92,6 +92,10 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
               await this.taskService.completeTask(uri, line, today);
               // refresh tasks
               const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+              if (!workspaceFolder) {
+                webviewView.webview.postMessage({ command: 'tasks:update', tasks: [] });
+                return;
+              }
               const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri.fsPath, '**/*.md'), '**/node_modules/**', 200);
               const tasks = await this.taskService.collectTasksFromUris(files);
               webviewView.webview.postMessage({ command: 'tasks:update', tasks });
