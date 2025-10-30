@@ -117,6 +117,16 @@
           "type": "string",
           "default": "",
           "description": "New note template"
+        },
+        "obsd.dailyNoteFormat": {
+          "type": "string",
+          "default": "yyyy-MM-dd",
+          "description": "Daily note filename date format (used to generate daily note file names). Use a Windows-safe format (avoid path separators)."
+        },
+        "obsd.captureSectionName": {
+          "type": "string",
+          "default": "Quick Capture",
+          "description": "Section heading in the daily note where Quick Capture entries are appended."
         }
       }
     }
