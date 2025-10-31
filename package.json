@@ -31,7 +31,14 @@
     "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
   },
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:obsd.openOrCreateWikiLink",
+    "onCommand:obsd.insertDate",
+    "onCommand:obsd.insertTime",
+    "onCommand:obsd.preview",
+    "onCommand:obsd.openQuickCapture",
+    "onCommand:obsd.openDailyNote",
+    "onCommand:obsd.handleEnterKey"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
