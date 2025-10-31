@@ -31,8 +31,7 @@
     "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
   },
   "activationEvents": [
-    "onLanguage:markdown",
-    "onCommand:obsd.openQuickCapture"
+    "onLanguage:markdown"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
