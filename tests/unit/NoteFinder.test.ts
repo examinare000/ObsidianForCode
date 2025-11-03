@@ -9,7 +9,6 @@
 import { expect } from 'chai';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import * as path from 'path';
 import { NoteFinder } from '../../src/utils/NoteFinder';
 
 describe('NoteFinder', () => {
@@ -249,6 +248,365 @@ describe('NoteFinder', () => {
             expect(result[0].title).to.equal('Test');
             expect(result[0].relativePath).to.equal('Test.md');
         });
+
+        it('should filter by directory when prefix contains slash', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/projects/Project Plan.md'),
+                vscode.Uri.file('/test/workspace/notes/projects/Project Notes.md'),
+                vscode.Uri.file('/test/workspace/notes/Other Project.md') // Should not match
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'projects/Project',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.have.lengthOf(2);
+            expect(result[0].title).to.include('Project');
+            expect(result[0].relativePath).to.include('projects');
+            expect(result[1].title).to.include('Project');
+            expect(result[1].relativePath).to.include('projects');
+        });
+
+        it('should return all files in directory when prefix ends with slash and use broad glob', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/archive/Note1.md'),
+                vscode.Uri.file('/test/workspace/notes/archive/Note2.md'),
+                vscode.Uri.file('/test/workspace/notes/archive/Note3.md'),
+                vscode.Uri.file('/test/workspace/notes/Current.md') // Should not match
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'archive/',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.have.lengthOf(3);
+            expect(result[0].relativePath).to.include('archive');
+            expect(result[1].relativePath).to.include('archive');
+            expect(result[2].relativePath).to.include('archive');
+
+            // Verify glob and base were correct
+            expect(findFilesStub.calledOnce).to.be.true;
+            const callArgs = findFilesStub.firstCall.args;
+            const globPattern = callArgs[0] as vscode.RelativePattern;
+            expect(globPattern.pattern).to.equal('**/*.md');
+            const baseAny: any = (globPattern as any).base;
+            const basePath = typeof baseAny === 'string' ? baseAny : (baseAny.fsPath as string);
+            expect(basePath).to.include('/test/workspace/notes/archive');
+        });
+
+        it('should handle nested directory paths with slashes and narrow glob by file prefix', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/2024/01/Meeting.md'),
+                vscode.Uri.file('/test/workspace/notes/2024/01/Minutes.md'),
+                vscode.Uri.file('/test/workspace/notes/2024/02/Meeting.md') // Different directory
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                '2024/01/M',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.have.lengthOf(2);
+            expect(result[0].relativePath).to.include('2024/01');
+            expect(result[1].relativePath).to.include('2024/01');
+
+            // Verify glob and base were correct
+            expect(findFilesStub.calledOnce).to.be.true;
+            const callArgs = findFilesStub.firstCall.args;
+            const globPattern = callArgs[0] as vscode.RelativePattern;
+            expect(globPattern.pattern).to.equal('**/M*.md');
+            const baseAny2: any = (globPattern as any).base;
+            const basePath = typeof baseAny2 === 'string' ? baseAny2 : (baseAny2.fsPath as string);
+            expect(basePath).to.include('/test/workspace/notes/2024/01');
+        });
+
+        it('should return empty array when directory does not contain matching files', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/folder/Note1.md'),
+                vscode.Uri.file('/test/workspace/notes/folder/Note2.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'folder/Nonexistent',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            expect(result).to.be.an('array').that.is.empty;
+        });
+
+        it('should narrow glob by safe file prefix when no slash is present', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/Project.md'),
+                vscode.Uri.file('/test/workspace/notes/subfolder/Project Plan.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'Project',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should search all directories when no slash is present
+            expect(result).to.have.lengthOf(2);
+
+            // Verify findFiles was called with narrowed glob pattern when prefix is safe
+            expect(findFilesStub.calledOnce).to.be.true;
+            const callArgs = findFilesStub.firstCall.args;
+            const globPattern = callArgs[0] as vscode.RelativePattern;
+            expect(globPattern.pattern).to.equal('**/Project*.md');
+        });
+
+        it('should include files from directories matching prefix and use narrowed glob', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/projects/Plan.md'),
+                vscode.Uri.file('/test/workspace/notes/projects/Notes.md'),
+                vscode.Uri.file('/test/workspace/notes/Project Root.md') // Also matches prefix
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'proj',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should include both files from 'projects/' directory and 'Project Root.md'
+            expect(result).to.have.lengthOf(3);
+            expect(result.some(n => n.title === 'Plan')).to.be.true;
+            expect(result.some(n => n.title === 'Notes')).to.be.true;
+            expect(result.some(n => n.title === 'Project Root')).to.be.true;
+
+            // Verify narrow glob was used for safe prefix without directory
+            expect(findFilesStub.calledOnce).to.be.true;
+            const callArgs = findFilesStub.firstCall.args;
+            const globPattern = callArgs[0] as vscode.RelativePattern;
+            expect(globPattern.pattern).to.equal('**/proj*.md');
+            const baseAny3: any = (globPattern as any).base;
+            const basePath3 = typeof baseAny3 === 'string' ? baseAny3 : (baseAny3.fsPath as string);
+            expect(basePath3).to.include('/test/workspace/notes');
+        });
+
+        it('should include files from multiple matching directories', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/archive/2024/Note1.md'),
+                vscode.Uri.file('/test/workspace/notes/archive/2023/Note2.md'),
+                vscode.Uri.file('/test/workspace/notes/archived/Old.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'arc',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should include files from both 'archive/' and 'archived/' directories
+            expect(result).to.have.lengthOf(3);
+
+            // Verify ordering by depth for same match type (dirPrefix): shallower first
+            // 'archived/Old.md' (depth 2) should come before 'archive/2024/Note1.md' (depth 3)
+            const titlesInOrder = result.map(r => r.title);
+            expect(titlesInOrder[0]).to.equal('Old');
+        });
+
+        it('should prioritize file name matches over directory name matches and sort ties alphabetically', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/Test.md'), // Exact file name match
+                vscode.Uri.file('/test/workspace/notes/tests/Example.md'), // Directory match
+                vscode.Uri.file('/test/workspace/notes/Testing.md') // Partial file name match
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'test',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Verify complete sorting order: exact > filePrefix > dirPrefix, then by depth, then alphabetically
+            expect(result).to.have.lengthOf(3);
+            expect(result[0].title).to.equal('Test'); // exact match, depth 1
+            expect(result[1].title).to.equal('Testing'); // filePrefix match, depth 1
+            expect(result[2].title).to.equal('Example'); // dirPrefix match, depth 2
+        });
+
+        it('should sort alphabetically when match type and depth are equal (dirPrefix only)', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/zoo/Beta.md'),
+                vscode.Uri.file('/test/workspace/notes/zoo/Alpha.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'zo', // directory name matches only
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Both are dirPrefix with same depth; expect alphabetical by title
+            expect(result).to.have.lengthOf(2);
+            expect(result[0].title).to.equal('Alpha');
+            expect(result[1].title).to.equal('Beta');
+        });
+
+        it('should handle Japanese directory names', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/プロジェクト/計画.md'),
+                vscode.Uri.file('/test/workspace/notes/プロジェクト/メモ.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'プロ',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should include files from 'プロジェクト/' directory
+            expect(result).to.have.lengthOf(2);
+            expect(result.some(n => n.title === '計画')).to.be.true;
+            expect(result.some(n => n.title === 'メモ')).to.be.true;
+        });
+
+        it('should not duplicate results when both file and directory match', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/docs/README.md'),
+                vscode.Uri.file('/test/workspace/notes/Documentation.md')
+            ];
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves(mockFiles);
+
+            const result = await NoteFinder.findNotesByPrefix(
+                'doc',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should not have duplicates
+            expect(result).to.have.lengthOf(2);
+            const titles = result.map(n => n.title);
+            expect(new Set(titles).size).to.equal(titles.length);
+        });
     });
 
     describe('getAllNotes', () => {
@@ -449,6 +807,30 @@ describe('NoteFinder', () => {
             expect(result).to.be.null;
             // Verify that findFiles was called (path normalization happens in vscode.RelativePattern)
             expect(findFilesStub.calledOnce).to.be.true;
+        });
+
+        it('should prevent path traversal in findNotesByPrefix directory path', async () => {
+            const mockWorkspaceFolder: vscode.WorkspaceFolder = {
+                uri: vscode.Uri.file('/test/workspace'),
+                name: 'test-workspace',
+                index: 0
+            };
+
+            findFilesStub = sinon.stub(vscode.workspace, 'findFiles')
+                .resolves([]);
+
+            // Test with path traversal attempt
+            const result = await NoteFinder.findNotesByPrefix(
+                '../../etc/Test',
+                mockWorkspaceFolder,
+                'notes',
+                '.md',
+                10
+            );
+
+            // Should return empty array and not call findFiles
+            expect(result).to.be.an('array').that.is.empty;
+            expect(findFilesStub.called).to.be.false;
         });
 
         it('should handle empty vaultRoot string', async () => {

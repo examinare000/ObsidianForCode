@@ -60,7 +60,13 @@ const vscode = {
         workspaceFolders: [{
             uri: { fsPath: '/test/workspace' },
             name: 'test-workspace',
-            index: 0
+            index: 0,
+            createFileSystemWatcher: () => ({
+                onDidCreate: () => ({ dispose: () => {} }),
+                onDidDelete: () => ({ dispose: () => {} }),
+                onDidChange: () => ({ dispose: () => {} }),
+                dispose: () => {}
+            })
         }],
         fs: {
             stat: async () => ({ type: 1 }),
@@ -73,9 +79,21 @@ const vscode = {
         getWorkspaceFolder: () => ({
             uri: { fsPath: '/test/workspace' },
             name: 'test-workspace',
-            index: 0
+            index: 0,
+            createFileSystemWatcher: () => ({
+                onDidCreate: () => ({ dispose: () => {} }),
+                onDidDelete: () => ({ dispose: () => {} }),
+                onDidChange: () => ({ dispose: () => {} }),
+                dispose: () => {}
+            })
         }),
-        applyEdit: async () => true
+        applyEdit: async () => true,
+        createFileSystemWatcher: () => ({
+            onDidCreate: () => ({ dispose: () => {} }),
+            onDidDelete: () => ({ dispose: () => {} }),
+            onDidChange: () => ({ dispose: () => {} }),
+            dispose: () => {}
+        })
     },
     window: {
         showTextDocument: async () => ({}),

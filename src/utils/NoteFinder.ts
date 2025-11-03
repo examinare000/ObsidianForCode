@@ -34,9 +34,11 @@ export class NoteFinder {
         extension: string = '.md'
     ): Promise<{ title: string; uri: vscode.Uri; relativePath: string } | null> {
         // Construct the search pattern
-        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+        const searchBaseFs = vaultRoot && vaultRoot.trim() !== ''
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
             : workspaceFolder.uri.fsPath;
+        // Normalize to POSIX-style for consistent testing and matching
+        const searchBase = searchBaseFs.split(path.sep).join('/');
 
         // Create glob pattern for recursive search
         const pattern = new vscode.RelativePattern(
@@ -49,15 +51,23 @@ export class NoteFinder {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
 
             if (files.length > 0) {
-                // Return the first match (prioritize root level if multiple matches)
-                const sortedFiles = files.sort((a, b) => {
-                    const aDepth = a.fsPath.split(path.sep).length;
-                    const bDepth = b.fsPath.split(path.sep).length;
-                    return aDepth - bDepth;
+                // Normalize relative paths to use forward slashes and sort by depth
+                const notes = files.map(file => {
+                    const rel = path.relative(searchBase, file.fsPath).split(path.sep).join('/');
+                    return { uri: file, rel };
                 });
 
-                const file = sortedFiles[0];
-                const relativePath = path.relative(searchBase, file.fsPath);
+                notes.sort((a, b) => {
+                    const aDepth = a.rel.split('/').length;
+                    const bDepth = b.rel.split('/').length;
+                    if (aDepth !== bDepth) {
+                        return aDepth - bDepth;
+                    }
+                    return a.rel.localeCompare(b.rel);
+                });
+
+                const file = notes[0].uri;
+                const relativePath = notes[0].rel;
                 return {
                     title: path.basename(file.fsPath, extension),
                     uri: file,
@@ -72,10 +82,106 @@ export class NoteFinder {
     }
 
     /**
+     * Filters an array of notes by prefix and returns sorted results.
+     * This is a static helper method that can be used by both findNotesByPrefix and completion providers.
+     *
+     * @param notes - Array of notes to filter
+     * @param prefix - The prefix to match note titles against, optionally including directory path
+     * @param maxResults - Maximum number of results to return
+     * @returns Array of filtered and sorted note information
+     */
+    static filterNotesByPrefix(
+        notes: { title: string; uri: vscode.Uri; relativePath: string }[],
+        prefix: string,
+        maxResults: number
+    ): { title: string; uri: vscode.Uri; relativePath: string }[] {
+        if (!prefix) {
+            return notes.slice(0, maxResults);
+        }
+
+        // Parse directory path and file prefix
+        const lastSlashIndex = prefix.lastIndexOf('/');
+        const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) : '';
+        const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
+
+        interface ResultWithMatchType {
+            title: string;
+            uri: vscode.Uri;
+            relativePath: string;
+            matchType: 'exact' | 'filePrefix' | 'dirPrefix';
+        }
+
+        const resultsWithType: ResultWithMatchType[] = [];
+
+        for (const note of notes) {
+            const fileNameMatches = note.title.toLowerCase().startsWith(filePrefix.toLowerCase());
+            const exactMatch = note.title.toLowerCase() === filePrefix.toLowerCase();
+
+            // Check if any directory in the path matches the prefix
+            let directoryMatches = false;
+            if (!directoryPath && filePrefix) {
+                const pathSegments = note.relativePath.split('/');
+                for (let i = 0; i < pathSegments.length - 1; i++) {
+                    if (pathSegments[i].toLowerCase().startsWith(filePrefix.toLowerCase())) {
+                        directoryMatches = true;
+                        break;
+                    }
+                }
+            }
+
+            if (fileNameMatches || directoryMatches) {
+                // If directory path is specified, ensure the file is in that directory (case-insensitive)
+                if (directoryPath) {
+                    const normalizedRelativePath = note.relativePath.toLowerCase();
+                    const normalizedDirectoryPath = directoryPath.split(path.sep).join('/').toLowerCase();
+                    if (!normalizedRelativePath.startsWith(normalizedDirectoryPath + '/')) {
+                        continue;
+                    }
+                }
+
+                let matchType: 'exact' | 'filePrefix' | 'dirPrefix';
+                if (exactMatch) {
+                    matchType = 'exact';
+                } else if (fileNameMatches) {
+                    matchType = 'filePrefix';
+                } else {
+                    matchType = 'dirPrefix';
+                }
+
+                resultsWithType.push({
+                    ...note,
+                    matchType
+                });
+            }
+        }
+
+        // Sort by relevance
+        resultsWithType.sort((a, b) => {
+            const matchTypeOrder = { exact: 0, filePrefix: 1, dirPrefix: 2 };
+            const aOrder = matchTypeOrder[a.matchType];
+            const bOrder = matchTypeOrder[b.matchType];
+            if (aOrder !== bOrder) {
+                return aOrder - bOrder;
+            }
+
+            const aDepth = a.relativePath.split('/').length;
+            const bDepth = b.relativePath.split('/').length;
+            if (aDepth !== bDepth) {
+                return aDepth - bDepth;
+            }
+
+            return a.title.localeCompare(b.title);
+        });
+
+        return resultsWithType.slice(0, maxResults);
+    }
+
+    /**
      * Finds all notes with titles that start with the given prefix.
      * Useful for autocomplete suggestions in WikiLinks.
+     * Supports directory filtering using slash notation (e.g., "folder/file").
      *
-     * @param prefix - The prefix to match note titles against
+     * @param prefix - The prefix to match note titles against, optionally including directory path
      * @param workspaceFolder - The workspace folder to search within
      * @param vaultRoot - Optional vault root path to constrain the search
      * @param extension - File extension to search for (default: '.md')
@@ -89,60 +195,66 @@ export class NoteFinder {
         extension: string = '.md',
         maxResults: number = 50
     ): Promise<{ title: string; uri: vscode.Uri; relativePath: string }[]> {
-        const searchBase = vaultRoot && vaultRoot.trim() !== ''
+        const searchBaseFs = vaultRoot && vaultRoot.trim() !== ''
             ? path.join(workspaceFolder.uri.fsPath, vaultRoot)
             : workspaceFolder.uri.fsPath;
+        const searchBase = searchBaseFs.split(path.sep).join('/');
 
-        // Create glob pattern for all markdown files
-        const pattern = new vscode.RelativePattern(
-            searchBase,
-            `**/*${extension}`
-        );
+        // Parse directory path and file prefix from the input
+        const lastSlashIndex = prefix.lastIndexOf('/');
+        const directoryPath = lastSlashIndex >= 0 ? prefix.substring(0, lastSlashIndex) : '';
+        const filePrefix = lastSlashIndex >= 0 ? prefix.substring(lastSlashIndex + 1) : prefix;
+
+        // Determine the search pattern based on whether a directory is specified
+        let searchPath: string;
+        let globPattern: string;
+
+        // Helper function to check if filePrefix is safe for glob narrowing
+        const isSafeForGlob = (str: string): boolean => {
+            return str.length > 0 && !/[*?\[\]{}]/.test(str);
+        };
+
+        // Narrow the glob by filePrefix when safe to reduce I/O.
+        // Apply the same logic regardless of whether a directory is specified.
+        const narrowedGlob = isSafeForGlob(filePrefix)
+            ? `**/${filePrefix}*${extension}`
+            : `**/*${extension}`;
+
+        if (directoryPath) {
+            // Validate and constrain directoryPath to prevent path traversal
+            const candidatePath = path.resolve(searchBaseFs, directoryPath);
+            const normalizedBase = path.resolve(searchBaseFs);
+            const relativeToBase = path.relative(normalizedBase, candidatePath);
+
+            // Ensure candidatePath is a descendant of searchBase
+            if (relativeToBase.startsWith('..') || path.isAbsolute(relativeToBase)) {
+                // Path traversal attempt detected, return empty results
+                return [];
+            }
+
+            // Search only in the specified directory (normalized to POSIX-style string)
+            searchPath = candidatePath.split(path.sep).join('/');
+            globPattern = narrowedGlob;
+        } else {
+            // Search in all directories
+            searchPath = searchBase;
+            globPattern = narrowedGlob;
+        }
+
+        const pattern = new vscode.RelativePattern(searchPath, globPattern);
 
         try {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**', maxResults * 2);
 
-            const results: { title: string; uri: vscode.Uri; relativePath: string }[] = [];
+            // Convert files to note objects
+            const notes = files.map(file => ({
+                title: path.basename(file.fsPath, extension),
+                uri: file,
+                relativePath: path.relative(searchBaseFs, file.fsPath).split(path.sep).join('/')
+            }));
 
-            for (const file of files) {
-                const fileName = path.basename(file.fsPath, extension);
-
-                // Check if the file name starts with the prefix (case-insensitive)
-                if (fileName.toLowerCase().startsWith(prefix.toLowerCase())) {
-                    const relativePath = path.relative(searchBase, file.fsPath);
-                    results.push({
-                        title: fileName,
-                        uri: file,
-                        relativePath: relativePath
-                    });
-                }
-            }
-
-            // Sort by relevance (exact match first, then by path depth, then alphabetically)
-            results.sort((a, b) => {
-                // Exact match (case-insensitive) comes first
-                const aExact = a.title.toLowerCase() === prefix.toLowerCase();
-                const bExact = b.title.toLowerCase() === prefix.toLowerCase();
-                if (aExact && !bExact) {
-                    return -1;
-                }
-                if (!aExact && bExact) {
-                    return 1;
-                }
-
-                // Then sort by path depth (shallower first)
-                const aDepth = a.relativePath.split(path.sep).length;
-                const bDepth = b.relativePath.split(path.sep).length;
-                if (aDepth !== bDepth) {
-                    return aDepth - bDepth;
-                }
-
-                // Finally sort alphabetically
-                return a.title.localeCompare(b.title);
-            });
-
-            // Return only the top maxResults entries
-            return results.slice(0, maxResults);
+            // Use the static helper method to filter and sort
+            return NoteFinder.filterNotesByPrefix(notes, prefix, maxResults);
         } catch (error) {
             console.error('Error finding notes by prefix:', error);
             return [];
@@ -168,7 +280,7 @@ export class NoteFinder {
             : workspaceFolder.uri.fsPath;
 
         const pattern = new vscode.RelativePattern(
-            searchBase,
+            searchBase.split(path.sep).join('/'),
             `**/*${extension}`
         );
 
@@ -176,7 +288,7 @@ export class NoteFinder {
             const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
             return files.map(file => {
                 const fileName = path.basename(file.fsPath, extension);
-                const relativePath = path.relative(searchBase, file.fsPath);
+                const relativePath = path.relative(searchBase, file.fsPath).split(path.sep).join('/');
                 return {
                     title: fileName,
                     uri: file,

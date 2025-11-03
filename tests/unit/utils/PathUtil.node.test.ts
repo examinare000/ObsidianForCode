@@ -93,10 +93,11 @@ describe('PathUtil (Node.js path.isAbsolute Implementation)', () => {
 
     // 4. エラーケースのテスト
     context('for edge cases and invalid paths', () => {
-      it('should return false for incomplete or invalid paths', () => {
+      it('should return correct results for incomplete or invalid paths', () => {
         expect(UpdatedPathUtil.isAbsolutePath('')).to.be.false;
         expect(UpdatedPathUtil.isAbsolutePath('C:')).to.be.false; // ドライブレターのみ
-        expect(UpdatedPathUtil.isAbsolutePath('\\\\server')).to.be.false; // 不完全なUNC
+        const expectedUNC = process.platform === 'win32' ? true : false;
+        expect(UpdatedPathUtil.isAbsolutePath('\\\\server')).to.equal(expectedUNC); // UNC server root behavior is platform-dependent
       });
 
       it('should handle null or undefined gracefully', () => {

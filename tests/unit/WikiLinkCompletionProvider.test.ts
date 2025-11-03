@@ -78,7 +78,8 @@ function createMockDocument(lines: string[], uri: vscode.Uri = vscode.Uri.file('
 describe('WikiLinkCompletionProvider', () => {
     let provider: WikiLinkCompletionProvider;
     let mockConfig: any;
-    let findNotesByPrefixStub: sinon.SinonStub;
+    let findFilesStub: sinon.SinonStub;
+    let filterNotesByPrefixStub: sinon.SinonStub;
     let getWorkspaceFolderStub: sinon.SinonStub;
 
     const mockWorkspaceFolder: vscode.WorkspaceFolder = {
@@ -92,8 +93,7 @@ describe('WikiLinkCompletionProvider', () => {
             get: (key: string, defaultValue?: any) => {
                 const configs: any = {
                     'vaultRoot': 'notes',
-                    'noteExtension': '.md',
-                    'listContinuationEnabled': true
+                    'noteExtension': '.md'
                 };
                 return configs[key] || defaultValue;
             },
@@ -108,8 +108,12 @@ describe('WikiLinkCompletionProvider', () => {
         getWorkspaceFolderStub = sinon.stub(vscode.workspace, 'getWorkspaceFolder')
             .returns(mockWorkspaceFolder);
 
-        // Stub NoteFinder.findNotesByPrefix
-        findNotesByPrefixStub = sinon.stub(NoteFinder, 'findNotesByPrefix');
+        // Stub vscode.workspace.findFiles for caching (getAllNotes)
+        findFilesStub = sinon.stub(vscode.workspace, 'findFiles').resolves([]);
+
+        // Stub NoteFinder.filterNotesByPrefix (passthrough by default, tests can override)
+        filterNotesByPrefixStub = sinon.stub(NoteFinder, 'filterNotesByPrefix')
+            .callsFake((notes, prefix, maxResults) => notes.slice(0, maxResults));
     });
 
     afterEach(() => {
@@ -118,11 +122,17 @@ describe('WikiLinkCompletionProvider', () => {
 
     describe('provideCompletionItems', () => {
         it('should provide completion items when inside WikiLink brackets', async () => {
-            const mockNotes = [
-                { title: 'First Note', uri: vscode.Uri.file('/test/First Note.md'), relativePath: 'First Note.md' },
-                { title: 'Second Note', uri: vscode.Uri.file('/test/Second Note.md'), relativePath: 'Second Note.md' }
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/First Note.md'),
+                vscode.Uri.file('/test/workspace/notes/Second Note.md')
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            findFilesStub.resolves(mockFiles);
+
+            const mockNotes = [
+                { title: 'First Note', uri: mockFiles[0], relativePath: 'First Note.md' },
+                { title: 'Second Note', uri: mockFiles[1], relativePath: 'Second Note.md' }
+            ];
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const lines = ['Some text [[Fi'];
             const doc = createMockDocument(lines);
@@ -164,11 +174,17 @@ describe('WikiLinkCompletionProvider', () => {
         });
 
         it('should filter suggestions based on typed prefix', async () => {
-            const mockNotes = [
-                { title: 'Project Plan', uri: vscode.Uri.file('/test/Project Plan.md'), relativePath: 'Project Plan.md' },
-                { title: 'Project Notes', uri: vscode.Uri.file('/test/Project Notes.md'), relativePath: 'Project Notes.md' }
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/Project Plan.md'),
+                vscode.Uri.file('/test/workspace/notes/Project Notes.md')
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            findFilesStub.resolves(mockFiles);
+
+            const mockNotes = [
+                { title: 'Project Plan', uri: mockFiles[0], relativePath: 'Project Plan.md' },
+                { title: 'Project Notes', uri: mockFiles[1], relativePath: 'Project Notes.md' }
+            ];
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const lines = ['Reference to [[Proj'];
             const doc = createMockDocument(lines);
@@ -180,18 +196,26 @@ describe('WikiLinkCompletionProvider', () => {
 
             expect(result).to.not.be.null;
             expect(result).to.have.lengthOf(2);
-            // Verify that findNotesByPrefix was called with 'Proj' prefix
-            expect(findNotesByPrefixStub.calledOnce).to.be.true;
-            expect(findNotesByPrefixStub.firstCall.args[0]).to.equal('Proj');
+            // Verify that filterNotesByPrefix was called with 'Proj' prefix
+            expect(filterNotesByPrefixStub.calledOnce).to.be.true;
+            const filterCallArgs = filterNotesByPrefixStub.firstCall.args;
+            expect(filterCallArgs[1]).to.equal('Proj'); // Second argument is prefix
         });
 
         it('should sort exact matches first', async () => {
-            const mockNotes = [
-                { title: 'Test', uri: vscode.Uri.file('/test/Test.md'), relativePath: 'Test.md' },
-                { title: 'Testing', uri: vscode.Uri.file('/test/Testing.md'), relativePath: 'Testing.md' },
-                { title: 'Test Cases', uri: vscode.Uri.file('/test/Test Cases.md'), relativePath: 'Test Cases.md' }
+            const mockFiles = [
+                vscode.Uri.file('/test/workspace/notes/Test.md'),
+                vscode.Uri.file('/test/workspace/notes/Testing.md'),
+                vscode.Uri.file('/test/workspace/notes/Test Cases.md')
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            findFilesStub.resolves(mockFiles);
+
+            const mockNotes = [
+                { title: 'Test', uri: mockFiles[0], relativePath: 'Test.md' },
+                { title: 'Testing', uri: mockFiles[1], relativePath: 'Testing.md' },
+                { title: 'Test Cases', uri: mockFiles[2], relativePath: 'Test Cases.md' }
+            ];
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const lines = ['[[Test'];
             const doc = createMockDocument(lines);
@@ -212,10 +236,13 @@ describe('WikiLinkCompletionProvider', () => {
         });
 
         it('should handle closing brackets correctly when they exist', async () => {
+            const mockFiles = [vscode.Uri.file('/test/workspace/notes/Note.md')];
+            findFilesStub.resolves(mockFiles);
+
             const mockNotes = [
-                { title: 'Note', uri: vscode.Uri.file('/test/Note.md'), relativePath: 'Note.md' }
+                { title: 'Note', uri: mockFiles[0], relativePath: 'Note.md' }
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const lines = ['Text [[Not]]'];
             const doc = createMockDocument(lines);
@@ -251,7 +278,8 @@ describe('WikiLinkCompletionProvider', () => {
         });
 
         it('should return empty array when no notes match', async () => {
-            findNotesByPrefixStub.resolves([]);
+            findFilesStub.resolves([]);
+            filterNotesByPrefixStub.returns([]);
 
             const lines = ['[[NonExistent'];
             const doc = createMockDocument(lines);
@@ -266,10 +294,13 @@ describe('WikiLinkCompletionProvider', () => {
         });
 
         it('should include file details and documentation', async () => {
+            const mockFiles = [vscode.Uri.file('/test/workspace/notes/subfolder/Important Note.md')];
+            findFilesStub.resolves(mockFiles);
+
             const mockNotes = [
-                { title: 'Important Note', uri: vscode.Uri.file('/test/subfolder/Important Note.md'), relativePath: 'subfolder/Important Note.md' }
+                { title: 'Important Note', uri: mockFiles[0], relativePath: 'subfolder/Important Note.md' }
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const lines = ['[[Imp'];
             const doc = createMockDocument(lines);
@@ -289,10 +320,13 @@ describe('WikiLinkCompletionProvider', () => {
         });
 
         it('should search using text before heading separator and preserve heading segment', async () => {
+            const mockFiles = [vscode.Uri.file('/test/workspace/notes/My Note.md')];
+            findFilesStub.resolves(mockFiles);
+
             const mockNotes = [
-                { title: 'My Note', uri: vscode.Uri.file('/vault/My Note.md'), relativePath: 'My Note.md' }
+                { title: 'My Note', uri: mockFiles[0], relativePath: 'My Note.md' }
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const line = '[[My Note#Heading';
             const doc = createMockDocument([line]);
@@ -304,7 +338,8 @@ describe('WikiLinkCompletionProvider', () => {
 
             expect(result).to.not.be.null;
             expect(result).to.have.lengthOf(1);
-            expect(findNotesByPrefixStub.firstCall.args[0]).to.equal('My Note');
+            const filterCallArgs = filterNotesByPrefixStub.firstCall.args;
+            expect(filterCallArgs[1]).to.equal('My Note'); // Second argument is prefix
 
             const range = result![0].range as vscode.Range;
             expect(range.start.character).to.equal(2); // after [[
@@ -312,10 +347,13 @@ describe('WikiLinkCompletionProvider', () => {
         });
 
         it('should limit replacement to text before alias separator', async () => {
+            const mockFiles = [vscode.Uri.file('/test/workspace/notes/Project Plan.md')];
+            findFilesStub.resolves(mockFiles);
+
             const mockNotes = [
-                { title: 'Project Plan', uri: vscode.Uri.file('/vault/Project Plan.md'), relativePath: 'Project Plan.md' }
+                { title: 'Project Plan', uri: mockFiles[0], relativePath: 'Project Plan.md' }
             ];
-            findNotesByPrefixStub.resolves(mockNotes);
+            filterNotesByPrefixStub.returns(mockNotes);
 
             const line = '[[Project|Display';
             const doc = createMockDocument([line]);
@@ -326,7 +364,8 @@ describe('WikiLinkCompletionProvider', () => {
             const result = await provider.provideCompletionItems(doc, position, token, context);
 
             expect(result).to.not.be.null;
-            expect(findNotesByPrefixStub.firstCall.args[0]).to.equal('Project');
+            const filterCallArgs = filterNotesByPrefixStub.firstCall.args;
+            expect(filterCallArgs[1]).to.equal('Project'); // Second argument is prefix
 
             const range = result![0].range as vscode.Range;
             expect(range.end.character).to.equal(line.indexOf('|'));
@@ -342,7 +381,7 @@ describe('WikiLinkCompletionProvider', () => {
             const result = await provider.provideCompletionItems(doc, position, token, context);
 
             expect(result).to.be.null;
-            expect(findNotesByPrefixStub.called).to.be.false;
+            expect(filterNotesByPrefixStub.called).to.be.false;
         });
     });
 

@@ -1,4 +1,4 @@
-# ObsidianForCode
+﻿# ObsidianForCode
 
 ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張機能です。
 
@@ -8,17 +8,22 @@ ObsidianForCode は VS Code 上で Obsidian の基本機能を提供する拡張
 
 最新の更新内容やバグ修正については、[リリースノート](./docs/releases/)をご確認ください。
 
-- **最新**: v0.4.7-dev - WikiLink操作性改善 (Ctrl/Cmd+Enter境界対応)
+- **最新**: v0.4.8-dev - WikiLink補完ディレクトリパス絞り込み機能
 
 ## 🚀 機能
 
 ### WikiLinkサポート
 - `[[Page]]` - シンプルなWikiLink
-- `[[Page|Display Name]]` - 表示名付きWikiLink  
+- `[[Page|Display Name]]` - 表示名付きWikiLink
 - `[[Page#Heading]]` - セクション指定WikiLink
 - `[[Page#Heading|Display]]` - 複合WikiLink
 - サブディレクトリ内の既存ノートを優先して解決
 - Heading / Alias 入力中でも安定したWikiLink補完
+- **ディレクトリパス絞り込み補完** (v0.4.8)
+  - `[[folder/file]]` - 特定ディレクトリ内のファイルを絞り込み
+  - `[[folder/]]` - ディレクトリ内の全ファイルをリスト
+  - ネストされたパス対応 (`[[2024/01/meeting]]`)
+  - ディレクトリ名マッチング（`[[proj]]` → `projects/` 内のファイルも候補に表示）
 
 ### コマンド
 - **Open/Create WikiLink** (`Ctrl+Enter` / `Cmd+Enter`) - WikiLink先を開く・作成（`]]` 上のカーソルにも対応）
@@ -91,9 +96,38 @@ npm run test:integration # 統合テスト
 ## 📚 ドキュメント
 
 - [開発状況レポート](./docs/development-status.md) - 現在の開発状況と統計
-- [アーキテクチャ決定記録 (ADR)](./docs/adr/) - 技術的意思決定の記録（16件）
+- [アーキテクチャ決定記録 (ADR)](./docs/adr/) - 技術的意思決定の記録（17件）
 - [プロダクト要件定義 (PRD)](./docs/prd/prd.md) - 機能要件と設計方針
 - [詳細設計書](./docs/tech/detailed-design.md) - システムアーキテクチャ
+
+## ✨ Quick Capture (クイックキャプチャ)
+
+Quick Capture はサイドバーから素早くメモやタスクを取り込み、
+当日のデイリーノートの指定セクションへタイムスタンプ付きで追記します。
+
+主な機能:
+
+- 右サイドバーからショートカットで開ける簡易入力欄
+- 入力は現在の日付のデイリーノート指定セクション末尾へ追記（設定でセクション名を変更可）
+- ボタン1つでVault全体から未完了チェックリストを収集し、ワンクリックで完了（元ノートに [completion: YYYY-MM-DD] を付記）
+
+設定キー:
+
+- `obsd.dailyNotePath` - ノートの格納フォルダ（デフォルト: `dailynotes`）
+- `obsd.dailyNoteFormat` - デイリーノートのファイル名フォーマット（例: `YYYY-MM-DD.md`）
+- `obsd.captureSectionName` - クイックキャプチャを書き込むセクション名（デフォルト: `Quick Notes`）
+
+キーバインド:
+
+- `Ctrl+Alt+M` (Windows) などでサイドバーをすばやく開くことが可能（`package.json`でカスタマイズ可）
+
+簡単な使い方:
+
+1. ショートカットで Quick Capture サイドバーを開く
+2. 入力欄にメモを入力して `Add` を押すと、当日のデイリーノートに `- [ ] HH:mm — {あなたのメモ}` の形で追記されます
+3. サイドバー下部の未完了タスクリストから「Complete」を押すと元ノートに完了タグが付与され一覧が更新されます
+
+注記: これは MVP 実装です。将来的にはバックグラウンドでのインデックス作成、設定ベースの索引除外、UI改善を行う予定です。
 
 ## 🔧 開発環境対応
 
@@ -104,3 +138,5 @@ npm run test:integration # 統合テスト
 ## ライセンス
 
 MIT License
+
+

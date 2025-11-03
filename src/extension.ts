@@ -18,6 +18,7 @@ import { ListContinuationProvider } from './providers/ListContinuationProvider';
 import { DailyNoteManager } from './managers/DailyNoteManager';
 import { PathUtil } from './utils/PathUtil';
 import { NoteFinder } from './utils/NoteFinder';
+import { QuickCaptureSidebarProvider } from './providers/QuickCaptureSidebarProvider';
 
 /**
  * Activates the Obsidian for Code extension.
@@ -82,12 +83,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     // WikiLink CompletionProvider登録
     let completionProviderDisposable: vscode.Disposable;
+    let wikiLinkCompletionProvider: WikiLinkCompletionProvider;
     try {
-        const wikiLinkCompletionProvider = new WikiLinkCompletionProvider(configManager);
+        wikiLinkCompletionProvider = new WikiLinkCompletionProvider(configManager);
         completionProviderDisposable = vscode.languages.registerCompletionItemProvider(
             { scheme: 'file', language: 'markdown' },
             wikiLinkCompletionProvider,
-            '[' // Trigger character
+            '[', // Trigger character for opening bracket
+            '/'  // Trigger character for directory path separator
         );
     } catch (error) {
         vscode.window.showErrorMessage('Failed to register WikiLinkCompletionProvider');
@@ -146,6 +149,26 @@ export function activate(context: vscode.ExtensionContext) {
         errors.push(`Failed to register preview: ${error}`);
     }
 
+    // Quick Capture sidebar provider registration
+    try {
+        const quickCaptureProvider = new QuickCaptureSidebarProvider(context, configManager, dailyNoteManager);
+        const providerDisposable = vscode.window.registerWebviewViewProvider(QuickCaptureSidebarProvider.viewId, quickCaptureProvider);
+        context.subscriptions.push(providerDisposable);
+    } catch (error) {
+        errors.push(`Failed to register QuickCaptureSidebarProvider: ${error}`);
+    }
+
+    // openQuickCapture コマンド (reveal Explorer where the view is contributed)
+    try {
+        const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
+            // Focus Explorer view (where Quick Capture view is contributed in package.json)
+            await vscode.commands.executeCommand('workbench.view.explorer');
+        });
+        commands.push(openQuickCaptureCommand);
+    } catch (error) {
+        errors.push(`Failed to register openQuickCapture: ${error}`);
+    }
+
     // DailyNoteコマンドは設定により条件付きで登録
     if (dailyNoteManager) {
         try {
@@ -181,6 +204,7 @@ export function activate(context: vscode.ExtensionContext) {
         const subscriptions = [
             linkProviderDisposable,
             completionProviderDisposable,
+            wikiLinkCompletionProvider, // Add the provider instance for proper cleanup
             ...commands
         ];
 
