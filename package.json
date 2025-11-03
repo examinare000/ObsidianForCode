@@ -102,6 +102,15 @@
         "when": "editorTextFocus && editorLangId == 'markdown'"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "obsd.quickCapture",
+          "name": "Quick Capture"
+        }
+      ]
+    },
     "configuration": {
       "title": "Obsidian for Code",
       "properties": {

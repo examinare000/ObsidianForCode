@@ -158,11 +158,11 @@ export function activate(context: vscode.ExtensionContext) {
         errors.push(`Failed to register QuickCaptureSidebarProvider: ${error}`);
     }
 
-    // openQuickCapture コマンド (reveal Explorer where the view is contributed)
+    // openQuickCapture コマンド (reveal and focus the Quick Capture view)
     try {
         const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
-            // Focus Explorer view (where Quick Capture view is contributed in package.json)
-            await vscode.commands.executeCommand('workbench.view.explorer');
+            // Focus the Quick Capture view directly using the auto-generated .focus command
+            await vscode.commands.executeCommand('obsd.quickCapture.focus');
         });
         commands.push(openQuickCaptureCommand);
     } catch (error) {
