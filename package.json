@@ -45,37 +45,37 @@
     "commands": [
       {
         "command": "obsd.openOrCreateWikiLink",
-        "title": "Obsidian for Code: Open or Create Wiki Link",
+        "title": "Open or Create Wiki Link",
         "category": "Obsidian for Code"
       },
       {
         "command": "obsd.insertDate",
-        "title": "Obsidian for Code: Insert Date",
+        "title": "Insert Date",
         "category": "Obsidian for Code"
       },
       {
         "command": "obsd.insertTime",
-        "title": "Obsidian for Code: Insert Time",
+        "title": "Insert Time",
         "category": "Obsidian for Code"
       },
       {
         "command": "obsd.preview",
-        "title": "Obsidian for Code: Preview Markdown",
+        "title": "Preview Markdown",
         "category": "Obsidian for Code"
       },
       {
         "command": "obsd.openQuickCapture",
-        "title": "Obsidian for Code: Open Quick Capture",
+        "title": "Open Quick Capture",
         "category": "Obsidian for Code"
       },
       {
         "command": "obsd.openDailyNote",
-        "title": "Obsidian for Code: Open Daily Note",
+        "title": "Open Daily Note",
         "category": "Obsidian for Code"
       },
       {
         "command": "obsd.handleEnterKey",
-        "title": "Obsidian for Code: Handle Enter Key",
+        "title": "Handle Enter Key",
         "category": "Obsidian for Code"
       }
     ],

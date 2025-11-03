@@ -161,8 +161,14 @@ export function activate(context: vscode.ExtensionContext) {
     // openQuickCapture コマンド (reveal and focus the Quick Capture view)
     try {
         const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
-            // Focus the Quick Capture view directly using the auto-generated .focus command
-            await vscode.commands.executeCommand('obsd.quickCapture.focus');
+            try {
+                // First, ensure Explorer is visible (where Quick Capture is located)
+                await vscode.commands.executeCommand('workbench.view.explorer');
+                // Then focus the Quick Capture view using the auto-generated .focus command
+                await vscode.commands.executeCommand('obsd.quickCapture.focus');
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to open Quick Capture view: ${error}`);
+            }
         });
         commands.push(openQuickCaptureCommand);
     } catch (error) {

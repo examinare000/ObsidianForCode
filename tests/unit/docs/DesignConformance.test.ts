@@ -97,8 +97,13 @@ describe('Design Conformance (Public Surface)', () => {
     expect(props['obsd.captureSectionName'].default).to.be.a('string');
   });
 
-  it('does not contribute undocumented views', () => {
-    // Design does not include custom view contributions in root manifest
-    expect(pkg.contributes?.views).to.be.undefined;
+  it('views match the documented set', () => {
+    // Quick Capture view is contributed to the Explorer view container
+    const views = pkg.contributes?.views;
+    expect(views).to.exist;
+    expect(views?.explorer).to.be.an('array').with.lengthOf(1);
+    expect(views.explorer[0].id).to.equal('obsd.quickCapture');
+    expect(views.explorer[0].name).to.equal('Quick Capture');
+    expect(views.explorer[0].type).to.equal('webview');
   });
 });
