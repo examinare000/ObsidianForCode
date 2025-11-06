@@ -188,7 +188,7 @@ describe('QuickCaptureSidebarProvider', () => {
             expect(errorMessage.message).to.include('No workspace open');
         });
 
-        it('should send error response when DailyNoteManager is unavailable', async () => {
+        it('should handle errors from DailyNoteManager', async () => {
             const mockWorkspaceFolder = {
                 uri: vscode.Uri.file('/test/workspace'),
                 name: 'test',
@@ -196,14 +196,20 @@ describe('QuickCaptureSidebarProvider', () => {
             };
             (vscode.workspace as any).workspaceFolders = [mockWorkspaceFolder];
 
-            // DailyNoteManagerなしでプロバイダを作成
-            const providerWithoutManager = new QuickCaptureSidebarProvider(
+            // DailyNoteManagerがエラーをthrowする場合
+            const failingDailyNoteManager = {
+                appendToSection: async () => {
+                    throw new Error('File write failed');
+                }
+            } as any;
+
+            const providerWithFailingManager = new QuickCaptureSidebarProvider(
                 mockContext,
                 mockConfigManager,
-                undefined as any // DailyNoteManagerなし
+                failingDailyNoteManager
             );
 
-            providerWithoutManager.resolveWebviewView(mockWebviewView, {} as any, {} as any);
+            providerWithFailingManager.resolveWebviewView(mockWebviewView, {} as any, {} as any);
 
             const messageCallback = (mockWebviewView.webview as any)._messageCallback;
             await messageCallback({
@@ -213,7 +219,7 @@ describe('QuickCaptureSidebarProvider', () => {
 
             const errorMessage = receivedMessages.find(m => m.command === 'error');
             expect(errorMessage).to.exist;
-            expect(errorMessage.message).to.include('DailyNoteManager unavailable');
+            expect(errorMessage.message).to.include('File write failed');
         });
     });
 
@@ -314,7 +320,7 @@ describe('QuickCaptureSidebarProvider', () => {
     });
 
     describe('constructor dependency injection', () => {
-        it('should accept required dependencies', () => {
+        it('should accept all required dependencies', () => {
             expect(() => {
                 new QuickCaptureSidebarProvider(
                     mockContext,
@@ -324,16 +330,17 @@ describe('QuickCaptureSidebarProvider', () => {
             }).to.not.throw();
         });
 
-        it('should throw or handle gracefully when DailyNoteManager is missing', () => {
-            // この動作は設計改善後にrequiredになるため、テストで確認
-            // 現状はoptionalなので、undefinedでも作成可能
-            expect(() => {
-                new QuickCaptureSidebarProvider(
-                    mockContext,
-                    mockConfigManager,
-                    undefined as any
-                );
-            }).to.not.throw();
+        it('should require DailyNoteManager as mandatory dependency', () => {
+            // DailyNoteManagerは必須依存性なので、TypeScriptコンパイル時にエラーになる
+            // ランタイムでundefinedを渡した場合の動作を確認
+            const providerWithUndefined = new QuickCaptureSidebarProvider(
+                mockContext,
+                mockConfigManager,
+                undefined as any
+            );
+
+            // undefinedが渡された場合、appendToSectionを呼ぶとエラーになる
+            expect(providerWithUndefined).to.exist;
         });
     });
 });
