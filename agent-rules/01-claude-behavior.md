@@ -46,18 +46,7 @@
 
 ### Git操作制約
 
-- **コミット前確認**: git status、git diffを並列実行して状況把握
-- **atomic commit**: 1コミット = 1論理変更
-- **日本語コミットメッセージ**: 「機能: 説明」形式で日本語記述
-- **直接コミット禁止**: master、main、developブランチへの直接コミット禁止
-
-```bash
-# 良いコミットメッセージ例
-git commit -m "認証: ユーザーログイン機能を実装"
-git commit -m "修正: パスワード検証のバグを解決"
-git commit -m "テスト: ユーザー認証のテストケースを追加"
-git commit -m "削除: 不要なデバッグログを削除"
-```
+Git 操作の制約・手順は`agent-rules/08-git-strategy.md` を参照。
 
 ### エラーハンドリング
 

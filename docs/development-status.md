@@ -1,7 +1,7 @@
 # 開発状況レポート
 
 ## プロジェクト概要
-**ObsidianForCode** - ObsidianのようなWikiLink機能をVS Codeで提供するextension
+**ObsidianForCode** - WikiLinkによってネットワーク化されたログノート機能をVS Codeで提供するextension
 
 ## 開発完了状況
 
