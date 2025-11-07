@@ -149,30 +149,34 @@ export function activate(context: vscode.ExtensionContext) {
         errors.push(`Failed to register preview: ${error}`);
     }
 
-    // Quick Capture sidebar provider registration
-    try {
-        const quickCaptureProvider = new QuickCaptureSidebarProvider(context, configManager, dailyNoteManager);
-        const providerDisposable = vscode.window.registerWebviewViewProvider(QuickCaptureSidebarProvider.viewId, quickCaptureProvider);
-        context.subscriptions.push(providerDisposable);
-    } catch (error) {
-        errors.push(`Failed to register QuickCaptureSidebarProvider: ${error}`);
+    // Quick Capture sidebar provider registration (requires DailyNoteManager)
+    if (dailyNoteManager) {
+        try {
+            const quickCaptureProvider = new QuickCaptureSidebarProvider(context, configManager, dailyNoteManager);
+            const providerDisposable = vscode.window.registerWebviewViewProvider(QuickCaptureSidebarProvider.viewId, quickCaptureProvider);
+            context.subscriptions.push(providerDisposable);
+        } catch (error) {
+            errors.push(`Failed to register QuickCaptureSidebarProvider: ${error}`);
+        }
     }
 
-    // openQuickCapture コマンド (reveal and focus the Quick Capture view)
-    try {
-        const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
-            try {
-                // First, ensure Explorer is visible (where Quick Capture is located)
-                await vscode.commands.executeCommand('workbench.view.explorer');
-                // Then focus the Quick Capture view using the auto-generated .focus command
-                await vscode.commands.executeCommand('obsd.quickCapture.focus');
-            } catch (error) {
-                vscode.window.showErrorMessage(`Failed to open Quick Capture view: ${error}`);
-            }
-        });
-        commands.push(openQuickCaptureCommand);
-    } catch (error) {
-        errors.push(`Failed to register openQuickCapture: ${error}`);
+    // openQuickCapture コマンド (reveal and focus the Quick Capture view, requires DailyNoteManager)
+    if (dailyNoteManager) {
+        try {
+            const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
+                try {
+                    // First, ensure Explorer is visible (where Quick Capture is located)
+                    await vscode.commands.executeCommand('workbench.view.explorer');
+                    // Then focus the Quick Capture view using the auto-generated .focus command
+                    await vscode.commands.executeCommand('obsd.quickCapture.focus');
+                } catch (error) {
+                    vscode.window.showErrorMessage(`Failed to open Quick Capture view: ${error}`);
+                }
+            });
+            commands.push(openQuickCaptureCommand);
+        } catch (error) {
+            errors.push(`Failed to register openQuickCapture: ${error}`);
+        }
     }
 
     // DailyNoteコマンドは設定により条件付きで登録
