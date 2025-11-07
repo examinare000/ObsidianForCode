@@ -1,9 +1,9 @@
 {
-  "name": "obsidianforcode",
-  "displayName": "Obsidian for Code",
+  "name": "mdloggerforcode",
+  "displayName": "MDlogger For Code",
   "description": "Obsidian-like WikiLink functionality for VS Code",
   "version": "0.4.11",
-  "publisher": "obsidianforcode",
+  "publisher": "mdloggerforCode",
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -24,80 +24,80 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/obsidianforcode/obsidianforcode.git"
+    "url": "https://github.com/examinare000/mdloggerforcode.git"
   },
-  "homepage": "https://github.com/obsidianforcode/obsidianforcode#readme",
+  "homepage": "https://github.com/examinare000/mdloggerforcode#readme",
   "bugs": {
-    "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
+    "url": "https://github.com/examinare000/mdloggerforcode/issues"
   },
   "activationEvents": [
     "onLanguage:markdown",
-    "onCommand:obsd.openOrCreateWikiLink",
-    "onCommand:obsd.insertDate",
-    "onCommand:obsd.insertTime",
-    "onCommand:obsd.preview",
-    "onCommand:obsd.openQuickCapture",
-    "onCommand:obsd.openDailyNote",
-    "onCommand:obsd.handleEnterKey"
+    "onCommand:mdlg.openOrCreateWikiLink",
+    "onCommand:mdlg.insertDate",
+    "onCommand:mdlg.insertTime",
+    "onCommand:mdlg.preview",
+    "onCommand:mdlg.openQuickCapture",
+    "onCommand:mdlg.openDailyNote",
+    "onCommand:mdlg.handleEnterKey"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "obsd.openOrCreateWikiLink",
+        "command": "mdlg.openOrCreateWikiLink",
         "title": "Open or Create Wiki Link",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.insertDate",
+        "command": "mdlg.insertDate",
         "title": "Insert Date",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.insertTime",
+        "command": "mdlg.insertTime",
         "title": "Insert Time",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.preview",
+        "command": "mdlg.preview",
         "title": "Preview Markdown",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.openQuickCapture",
+        "command": "mdlg.openQuickCapture",
         "title": "Open Quick Capture",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.openDailyNote",
+        "command": "mdlg.openDailyNote",
         "title": "Open Daily Note",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.handleEnterKey",
+        "command": "mdlg.handleEnterKey",
         "title": "Handle Enter Key",
-        "category": "Obsidian for Code"
+        "category": "MDloggerForCode"
       }
     ],
     "keybindings": [
       {
-        "command": "obsd.openOrCreateWikiLink",
+        "command": "mdlg.openOrCreateWikiLink",
         "key": "ctrl+enter",
         "mac": "cmd+enter",
-        "when": "editorTextFocus && obsd.inWikiLink"
+        "when": "editorTextFocus && mdlg.inWikiLink"
       },
       {
-        "command": "obsd.insertDate",
+        "command": "mdlg.insertDate",
         "key": "alt+d",
         "when": "editorTextFocus"
       },
       {
-        "command": "obsd.insertTime",
+        "command": "mdlg.insertTime",
         "key": "alt+t",
         "when": "editorTextFocus"
       },
       {
-        "command": "obsd.handleEnterKey",
+        "command": "mdlg.handleEnterKey",
         "key": "enter",
         "when": "editorTextFocus && editorLangId == 'markdown'"
       }
@@ -106,25 +106,25 @@
       "explorer": [
         {
           "type": "webview",
-          "id": "obsd.quickCapture",
+          "id": "mdlg.quickCapture",
           "name": "Quick Capture"
         }
       ]
     },
     "configuration": {
-      "title": "Obsidian for Code",
+      "title": "MDloggerForCode",
       "properties": {
-        "obsd.vaultRoot": {
+        "mdlg.vaultRoot": {
           "type": "string",
           "default": "",
           "description": "Vault root directory path"
         },
-        "obsd.noteExtension": {
+        "mdlg.noteExtension": {
           "type": "string",
           "default": ".md",
           "description": "Note file extension"
         },
-        "obsd.slugStrategy": {
+        "mdlg.slugStrategy": {
           "type": "string",
           "enum": [
             "passthrough",
@@ -134,67 +134,67 @@
           "default": "passthrough",
           "description": "File name transformation strategy"
         },
-        "obsd.dateFormat": {
+        "mdlg.dateFormat": {
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date insertion format"
         },
-        "obsd.timeFormat": {
+        "mdlg.timeFormat": {
           "type": "string",
           "default": "HH:mm",
           "description": "Time insertion format"
         },
-        "obsd.template": {
+        "mdlg.template": {
           "type": "string",
           "default": "",
           "description": "New note template"
         },
-        "obsd.dailyNoteTemplate": {
+        "mdlg.dailyNoteTemplate": {
           "type": "string",
           "default": "",
           "description": "Daily note template file path (relative to vault root)"
         },
-        "obsd.dailyNotePath": {
+        "mdlg.dailyNotePath": {
           "type": "string",
           "default": "dailynotes",
           "description": "Daily notes directory path (relative to vault root)"
         },
-        "obsd.dailyNoteEnabled": {
+        "mdlg.dailyNoteEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable or disable DailyNote functionality"
         },
-        "obsd.notesFolder": {
+        "mdlg.notesFolder": {
           "type": "string",
           "default": "dailynotes",
           "description": "Daily notes directory path (relative to vault root)"
         },
-        "obsd.dailyNoteFormat": {
+        "mdlg.dailyNoteFormat": {
           "type": "string",
           "default": "YYYY-MM-DD.md",
           "description": "Daily note file name format"
         },
-        "obsd.captureSectionName": {
+        "mdlg.captureSectionName": {
           "type": "string",
           "default": "Quick Notes",
           "description": "Section heading name inside the daily note to append captured items"
         },
-        "obsd.listContinuationEnabled": {
+        "mdlg.listContinuationEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
         },
-        "obsd.searchSubdirectories": {
+        "mdlg.searchSubdirectories": {
           "type": "boolean",
           "default": true,
           "description": "Search subdirectories when opening WikiLinks. If disabled, only creates new files at the root level even when same-named files exist in subdirectories"
         },
-        "obsd.dailyNoteKeybindingGuide": {
+        "mdlg.dailyNoteKeybindingGuide": {
           "type": "string",
           "default": "Follow the steps below",
           "readonly": true,
           "description": "How to configure DailyNote keyboard shortcut",
-          "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\n\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search for `obsd.openDailyNote`\n4. Click the `+` icon to set your preferred key combination\n\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\n\n*This setting is for guidance only and cannot be edited.*"
+          "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\n\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search for `mdlg.openDailyNote`\n4. Click the `+` icon to set your preferred key combination\n\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\n\n*This setting is for guidance only and cannot be edited.*"
         }
       }
     }

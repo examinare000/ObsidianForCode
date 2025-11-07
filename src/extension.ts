@@ -1,9 +1,9 @@
 /**
- * @fileoverview Main extension entry point for Obsidian for Code VS Code extension.
+ * @fileoverview Main extension entry point for MDloggerForCode VS Code extension.
  * Provides WikiLink functionality, daily notes, and date/time insertion commands for Markdown files.
  * Manages extension lifecycle, command registration, and provider initialization.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 
@@ -21,7 +21,7 @@ import { NoteFinder } from './utils/NoteFinder';
 import { QuickCaptureSidebarProvider } from './providers/QuickCaptureSidebarProvider';
 
 /**
- * Activates the Obsidian for Code extension.
+ * Activates the MDloggerForCode extension.
  * Initializes all managers, providers, and registers commands and event listeners.
  *
  * @param context - The VS Code extension context for managing subscriptions and resources
@@ -33,7 +33,24 @@ export function activate(context: vscode.ExtensionContext) {
     // Configuration Manager初期化
     let configManager: ConfigurationManager;
     try {
-        configManager = new ConfigurationManager(vscode.workspace.getConfiguration('obsd'));
+        const newConfig = vscode.workspace.getConfiguration('mdlg');
+        const legacyConfig = vscode.workspace.getConfiguration('obsd');
+        const mergedConfig = {
+            get<T>(key: string, defaultValue?: T): T {
+                const val = newConfig.get<T>(key, undefined as unknown as T);
+                if (val !== undefined) {
+                    return val as T;
+                }
+                return legacyConfig.get<T>(key, defaultValue as T);
+            },
+            has(key: string): boolean {
+                return newConfig.has(key) || legacyConfig.has(key);
+            },
+            update(key: string, value: any) {
+                return newConfig.update(key, value);
+            }
+        };
+        configManager = new ConfigurationManager(mergedConfig);
     } catch (error) {
         vscode.window.showErrorMessage('Failed to initialize ConfigurationManager');
         return;
@@ -111,7 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // openOrCreateWikiLink コマンド
     try {
-        const openCommand = vscode.commands.registerCommand('obsd.openOrCreateWikiLink', () => {
+        const openCommand = vscode.commands.registerCommand('mdlg.openOrCreateWikiLink', () => {
             return openOrCreateWikiLink(configManager);
         });
         commands.push(openCommand);
@@ -121,7 +138,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // insertDate コマンド
     try {
-        const dateCommand = vscode.commands.registerCommand('obsd.insertDate', () => {
+        const dateCommand = vscode.commands.registerCommand('mdlg.insertDate', () => {
             return insertDate(configManager, dateTimeFormatter);
         });
         commands.push(dateCommand);
@@ -131,7 +148,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // insertTime コマンド
     try {
-        const timeCommand = vscode.commands.registerCommand('obsd.insertTime', () => {
+        const timeCommand = vscode.commands.registerCommand('mdlg.insertTime', () => {
             return insertTime(configManager, dateTimeFormatter);
         });
         commands.push(timeCommand);
@@ -141,7 +158,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // preview コマンド
     try {
-        const previewCommand = vscode.commands.registerCommand('obsd.preview', () => {
+        const previewCommand = vscode.commands.registerCommand('mdlg.preview', () => {
             return showPreview();
         });
         commands.push(previewCommand);
@@ -163,7 +180,7 @@ export function activate(context: vscode.ExtensionContext) {
     // openQuickCapture コマンド (reveal and focus the Quick Capture view, requires DailyNoteManager)
     if (dailyNoteManager) {
         try {
-            const openQuickCaptureCommand = vscode.commands.registerCommand('obsd.openQuickCapture', async () => {
+            const openQuickCaptureCommand = vscode.commands.registerCommand('mdlg.openQuickCapture', async () => {
                 try {
                     // First, ensure Explorer is visible (where Quick Capture is located)
                     await vscode.commands.executeCommand('workbench.view.explorer');
@@ -182,7 +199,7 @@ export function activate(context: vscode.ExtensionContext) {
     // DailyNoteコマンドは設定により条件付きで登録
     if (dailyNoteManager) {
         try {
-            const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+            const dailyNoteCommand = vscode.commands.registerCommand('mdlg.openDailyNote', async () => {
                 const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                 if (!workspaceFolder) {
                     vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
@@ -203,9 +220,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // エラー報告（但し拡張機能は継続）
     if (errors.length > 0) {
-        console.warn('[ObsidianForCode] Some commands failed to register:', errors);
+        console.warn('[MDloggerForCode] Some commands failed to register:', errors);
         vscode.window.showWarningMessage(
-            `ObsidianForCode: ${errors.length} command(s) failed to register. Check output panel for details.`
+            `MDloggerForCode: ${errors.length} command(s) failed to register. Check output panel for details.`
         );
     }
 

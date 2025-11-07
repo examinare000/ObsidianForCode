@@ -27,7 +27,7 @@
    - マルチルートワークスペースで常に最初のワークスペースフォルダを使用
 
 5. **Activation Event の欠落**
-   - `obsd.handleEnterKey` コマンドに対応する activation event がなく、テスト失敗
+   - `mdlg.handleEnterKey` コマンドに対応する activation event がなく、テスト失敗
 
 ## 決定
 
@@ -99,11 +99,11 @@ const offsetAt = (position: Position): number => {
 
 ### 4. ユーザー設定の追加
 
-`obsd.searchSubdirectories` 設定を新規追加：
+`mdlg.searchSubdirectories` 設定を新規追加：
 
 ```json
 {
-  "obsd.searchSubdirectories": {
+  "mdlg.searchSubdirectories": {
     "type": "boolean",
     "default": true,
     "description": "Search subdirectories when opening WikiLinks..."
@@ -119,7 +119,7 @@ const offsetAt = (position: Position): number => {
 - **ListContinuationProvider**: 空行削除を `replace` + `return false` に変更し二重空行を防止
 - **Switch case ブロックスコープ**: TDZ/hoisting エラーを回避
 - **マルチルートワークスペース対応**: `getWorkspaceFolder(document.uri)` で正しいフォルダを取得
-- **Activation Event 追加**: `onCommand:obsd.handleEnterKey` を追加
+- **Activation Event 追加**: `onCommand:mdlg.handleEnterKey` を追加
 
 ## 根拠
 
@@ -151,7 +151,7 @@ const offsetAt = (position: Position): number => {
 
 ### 中立影響
 - **破壊的変更**: NoteFinder API の変更により、extension.ts の呼び出し箇所を修正
-- **設定項目増加**: `obsd.searchSubdirectories` が追加され、設定画面に表示
+- **設定項目増加**: `mdlg.searchSubdirectories` が追加され、設定画面に表示
 
 ### 対応要項
 - 全テストの実行確認（`npm test`）
@@ -207,3 +207,4 @@ await NoteFinder.getAllNotes(workspace, 'notes', '.md')
 1. **パフォーマンス最適化**: 大規模ワークスペース（1000+ ファイル）でのソート性能検証
 2. **キャッシング**: `findNotesByPrefix` の結果をキャッシュし、補完性能を向上
 3. **フジーマッチ**: Levenshtein distance を使った曖昧検索の追加検討
+

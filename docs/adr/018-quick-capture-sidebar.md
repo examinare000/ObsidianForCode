@@ -14,7 +14,7 @@
 以下を採用する。
 
 - 右サイドバーは VS Code の WebviewView を用いて実装する。
-- 設定は既存の `obsd` (または `obsidianForCode`) ネームスペースに鍵を追加して管理する。
+- 設定は既存の `obsd` (または `MDloggerForCode`) ネームスペースに鍵を追加して管理する。
   - `vaultPath` (string) — Vault のルートパス (空の場合は workspaceFolder)
   - `notesFolder` (string) — Vault 配下のノートディレクトリ（例: `dailynotes`）
   - `dailyNoteFormat` (string) — 日次ノートのファイル名フォーマット（例: `YYYY-MM-DD.md`）
@@ -151,3 +151,4 @@ t-wada の TDD 手法に従い、以下の順序で進める：
 更新日: 2025-11-07
 
 決定者: 開発チーム
+

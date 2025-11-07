@@ -2,7 +2,7 @@
  * @fileoverview List and checkbox continuation provider for VS Code extension.
  * Automatically continues lists and checkboxes when pressing Enter in Markdown files.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 
@@ -162,7 +162,7 @@ export class ListContinuationProvider {
      * @returns The disposable for the registered provider
      */
     register(context: vscode.ExtensionContext): vscode.Disposable {
-        return vscode.commands.registerCommand('obsd.handleEnterKey', async () => {
+        return vscode.commands.registerCommand('mdlg.handleEnterKey', async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor || editor.document.languageId !== 'markdown') {
                 // Let VS Code handle the Enter key normally

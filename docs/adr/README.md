@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-このディレクトリには、ObsidianForCode VS Code extensionの開発において下された重要な技術的決定を記録したADR（Architecture Decision Record）が含まれています。
+このディレクトリには、MDloggerForCode VS Code extensionの開発において下された重要な技術的決定を記録したADR（Architecture Decision Record）が含まれています。
 
 ## ADR一覧
 
@@ -57,3 +57,4 @@ YYYY-MM-DD
 ## 参考リンク
 - [Architecture Decision Records の書き方](https://github.com/joelparkerhenderson/architecture-decision-record)
 - [TDD については t-wada のガイドライン](https://github.com/testdouble/contributing-tests/wiki/Test-Driven-Development)
+

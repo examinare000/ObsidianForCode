@@ -8,9 +8,9 @@
 v0.4 系で導入した WikiLink 機能は実用段階にあるが、以下のような操作性の問題が残っていた。
 
 1. **Ctrl/Cmd+Enter キーが動作しないケース**  
-   WikiLink の末尾 `]]` にカーソルを置いた状態では `obsd.inWikiLink` コンテキストが false になり、キーバインドが発火しなかった。
+   WikiLink の末尾 `]]` にカーソルを置いた状態では `mdlg.inWikiLink` コンテキストが false になり、キーバインドが発火しなかった。
 2. **サブディレクトリの既存ノートにジャンプできない**  
-   DocumentLinkProvider が常に `vaultRoot` 配下の直下 URI を組み立てており、`obsd.searchSubdirectories` が有効でも既存ノートを優先しなかった。
+   DocumentLinkProvider が常に `vaultRoot` 配下の直下 URI を組み立てており、`mdlg.searchSubdirectories` が有効でも既存ノートを優先しなかった。
 3. **WikiLink 補完が停止する/不正確になる**  
    `[[Page#Heading]]` や `[[Page|Alias]]` の入力中にプレフィックス抽出が正しく行われず、候補ゼロやエラーが発生した。
 
@@ -45,3 +45,4 @@ v0.4 系で導入した WikiLink 機能は実用段階にあるが、以下の�
 ### フォローアップ
 - マルチルートワークスペースでの `resolveLinkTarget` 戦略検証。
 - Heading/Alias を含む候補の挿入 UX（例えば候補側で `[[Page#Heading]]` を組み立てるか）の検討。
+

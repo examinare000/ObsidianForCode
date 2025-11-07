@@ -1,8 +1,8 @@
-# ObsidianForCode API仕様書
+# MDloggerForCode API仕様書
 
 ## 1. 概要
 
-本文書は、ObsidianForCode VS Code拡張機能の内部API仕様を定義します。
+本文書は、MDloggerForCode VS Code拡張機能の内部API仕様を定義します。
 
 ## 2. インターフェース定義
 
@@ -514,7 +514,7 @@ vscode.languages.registerCompletionItemProvider(
 
 ### 4.1 登録コマンド一覧
 
-#### 4.1.1 obsd.openOrCreateWikiLink
+#### 4.1.1 mdlg.openOrCreateWikiLink
 ```typescript
 interface OpenOrCreateWikiLinkParams {
   /** 強制的に新規作成するか */
@@ -526,7 +526,7 @@ interface OpenOrCreateWikiLinkParams {
 
 **実行条件**: 
 - エディタがアクティブ
-- `obsd.inWikiLink` コンテキストが true
+- `mdlg.inWikiLink` コンテキストが true
 
 **動作**:
 1. カーソル位置のWikiLinkを検出
@@ -534,7 +534,7 @@ interface OpenOrCreateWikiLinkParams {
 3. 存在する場合: ファイルを開く
 4. 存在しない場合: 新規作成後に開く
 
-#### 4.1.2 obsd.insertDate
+#### 4.1.2 mdlg.insertDate
 ```typescript
 interface InsertDateParams {
   /** 使用するフォーマット（省略時は設定値） */
@@ -548,7 +548,7 @@ interface InsertDateParams {
 
 **動作**: 指定位置に現在日付を挿入
 
-#### 4.1.3 obsd.insertTime
+#### 4.1.3 mdlg.insertTime
 ```typescript
 interface InsertTimeParams {
   /** 使用するフォーマット（省略時は設定値） */
@@ -562,7 +562,7 @@ interface InsertTimeParams {
 
 **動作**: 指定位置に現在時刻を挿入
 
-#### 4.1.4 obsd.preview
+#### 4.1.4 mdlg.preview
 ```typescript
 interface PreviewParams {
   /** プレビューを表示するドキュメント（省略時は現在のドキュメント） */

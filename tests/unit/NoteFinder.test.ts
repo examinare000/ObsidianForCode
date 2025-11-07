@@ -2,7 +2,7 @@
  * @fileoverview Unit tests for NoteFinder utility.
  * Tests note searching functionality across subdirectories.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

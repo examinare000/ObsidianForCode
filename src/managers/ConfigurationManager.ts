@@ -1,8 +1,8 @@
 /**
- * @fileoverview Configuration management for Obsidian for Code extension.
+ * @fileoverview Configuration management for MDloggerForCode extension.
  * Provides type-safe configuration access, validation, and change monitoring.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 
@@ -15,7 +15,7 @@
 export type SlugStrategy = 'passthrough' | 'kebab-case' | 'snake_case';
 
 /**
- * Complete configuration object for the Obsidian for Code extension.
+ * Complete configuration object for the MDloggerForCode extension.
  * Contains all user-configurable settings with their current values.
  */
 export interface ObsdConfiguration {
@@ -88,7 +88,7 @@ export interface WorkspaceConfiguration {
  * @class ConfigurationManager
  */
 export class ConfigurationManager {
-    private static readonly configSection = 'obsd';
+    private static readonly configSection = 'mdlg';
     private changeListeners: ((config: ObsdConfiguration) => void)[] = [];
     
     /**

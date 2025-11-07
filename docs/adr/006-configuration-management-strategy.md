@@ -58,8 +58,8 @@ onConfigurationChanged(callback: (config: ObsdConfiguration) => void): Disposabl
 ## 実装戦略
 
 ### 設定名前空間
-- すべての設定は`obsd.*`名前空間を使用
-- 例: `obsd.vaultRoot`, `obsd.dateFormat`
+- すべての設定は`mdlg.*`名前空間を使用
+- 例: `mdlg.vaultRoot`, `mdlg.dateFormat`
 
 ### デフォルト値
 - 各設定項目に適切なデフォルト値を設定
@@ -92,3 +92,4 @@ onConfigurationChanged(callback: (config: ObsdConfiguration) => void): Disposabl
    - 問題: 型安全性の欠如、テスト困難
 2. **設定ファイル**: 独自設定ファイルの使用
    - 問題: VS Code標準から逸脱、ユーザビリティ低下
+

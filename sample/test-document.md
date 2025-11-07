@@ -1,4 +1,4 @@
-# Test Document for ObsidianForCode
+# Test Document for MDloggerForCode
 
 This document contains various WikiLink patterns to test the extension:
 

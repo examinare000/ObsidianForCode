@@ -48,7 +48,7 @@ describe('WikiLinkContextProvider ロジック検証', () => {
 
         it('sample/test-document.mdの実際の内容でテストする', () => {
             const sampleLines = [
-                '# Test Document for ObsidianForCode',
+                '# Test Document for MDloggerForCode',
                 '',
                 'This document contains various WikiLink patterns to test the extension:',
                 '',
@@ -100,7 +100,7 @@ describe('WikiLinkContextProvider ロジック検証', () => {
     describe('実際のVSCodeファイルで検出できるかのシミュレーション', () => {
         it('test-document.mdでコマンド実行可能位置を特定', () => {
             // 実際のファイル内容をシミュレート
-            const fileContent = `# Test Document for ObsidianForCode
+            const fileContent = `# Test Document for MDloggerForCode
 
 This document contains various WikiLink patterns to test the extension:
 

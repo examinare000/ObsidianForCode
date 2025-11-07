@@ -3,7 +3,7 @@
  * Handles parsing of WikiLink syntax, slug transformations, and file name generation
  * with support for aliases, headings, and various naming strategies.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

@@ -3,7 +3,7 @@
  * Provides clickable links for WikiLink references in Markdown documents,
  * enabling navigation between linked files with testable interfaces.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

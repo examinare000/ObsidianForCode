@@ -130,7 +130,7 @@ describe('WikiLink キーバインド統合テスト', () => {
 
     describe('実際のサンプルファイルでのテスト', () => {
         it('sample/test-document.mdの[[Simple Page]]でコンテキストが有効になる', () => {
-            const sampleContent = `# Test Document for ObsidianForCode
+            const sampleContent = `# Test Document for MDloggerForCode
 
 This document contains various WikiLink patterns to test the extension:
 
