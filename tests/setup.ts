@@ -7,20 +7,23 @@ import { expect } from 'chai';
 const vscode = {
     workspace: {
         getConfiguration: (section?: string) => {
+            const sharedConfig = {
+                vaultRoot: '/test/vault',
+                noteExtension: '.md',
+                slugStrategy: 'passthrough',
+                dateFormat: 'YYYY-MM-DD',
+                timeFormat: 'HH:mm',
+                template: '# {{title}}\n\n',
+                dailyNoteTemplate: '',
+                dailyNotePath: 'dailynotes',
+                dailyNoteEnabled: true,
+                listContinuationEnabled: true,
+                searchSubdirectories: true
+            };
+
             const configData: Record<string, any> = {
-                obsd: {
-                    vaultRoot: '/test/vault',
-                    noteExtension: '.md',
-                    slugStrategy: 'passthrough',
-                    dateFormat: 'YYYY-MM-DD',
-                    timeFormat: 'HH:mm',
-                    template: '# {{title}}\n\n',
-                    dailyNoteTemplate: '',
-                    dailyNotePath: 'dailynotes',
-                    dailyNoteEnabled: true,
-                    listContinuationEnabled: true,
-                    searchSubdirectories: true
-                }
+                obsd: sharedConfig,
+                mdlg: sharedConfig
             };
 
             // If a section is specified, scope to that section

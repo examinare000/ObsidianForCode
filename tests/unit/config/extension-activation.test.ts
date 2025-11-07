@@ -139,7 +139,7 @@ describe('Extension Activation Configuration', () => {
     describe('package.json構造の妥当性', () => {
         it('拡張機能メタデータが適切に設定されていること', () => {
             expect(packageJson.name).to.equal('mdloggerforcode');
-            expect(packageJson.displayName).to.equal('MDloggerForCode');
+            expect(packageJson.displayName).to.equal('MDlogger For Code');
             expect(packageJson.main).to.equal('./out/src/extension.js');
         });
 
