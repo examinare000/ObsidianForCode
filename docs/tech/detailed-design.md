@@ -1,4 +1,4 @@
-# ObsidianForCode 詳細設計書
+# MDloggerForCode 詳細設計書
 
 > **更新情報**: このドキュメントは v0.1.0 時点の初期設計を記録しています。
 > 最新の実装状況は `development-status.md` を参照してください。
@@ -12,7 +12,7 @@
 ┌──────────────────────────────────────────────────────┐
 │                 VS Code Host                         │
 ├──────────────────────────────────────────────────────┤
-│  ObsidianForCode Extension (v0.4.7-dev)              │
+│  MDloggerForCode Extension (v0.4.7-dev)              │
 │  ┌──────────────┐  ┌────────────────────────────┐   │
 │  │  Extension   │  │   Providers                │   │
 │  │   Host       │←→│  - DocumentLink            │   │
@@ -57,129 +57,129 @@
 ### 2.1 package.json設計
 
 > **注意**: 以下は初期設計です。最新の `package.json` では以下の機能が追加されています：
-> - `obsd.openDailyNote` コマンド
-> - `obsd.handleEnterKey` コマンド
+> - `mdlg.openDailyNote` コマンド
+> - `mdlg.handleEnterKey` コマンド
 > - `dailyNoteTemplate`, `dailyNotePath`, `dailyNoteEnabled` 設定
 > - `listContinuationEnabled`, `searchSubdirectories` 設定
 > - activationEvents の拡充
 
 ```json
 {
-  "name": "obsidianforcode",
-  "displayName": "Obsidian for Code",
+  "name": "MDloggerForCode",
+  "displayName": "MDloggerForCode",
   "version": "0.4.4",
   "engines": { "vscode": "^1.103.0" },
   "categories": ["Other"],
   "activationEvents": [
     "onLanguage:markdown",
-    "onCommand:obsd.openOrCreateWikiLink",
-    "onCommand:obsd.insertDate",
-    "onCommand:obsd.insertTime",
-    "onCommand:obsd.preview",
-    "onCommand:obsd.openDailyNote",
-    "onCommand:obsd.handleEnterKey"
+    "onCommand:mdlg.openOrCreateWikiLink",
+    "onCommand:mdlg.insertDate",
+    "onCommand:mdlg.insertTime",
+    "onCommand:mdlg.preview",
+    "onCommand:mdlg.openDailyNote",
+    "onCommand:mdlg.handleEnterKey"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "obsd.openOrCreateWikiLink",
+        "command": "mdlg.openOrCreateWikiLink",
         "title": "Open or Create Wiki Link"
       },
       {
-        "command": "obsd.insertDate",
+        "command": "mdlg.insertDate",
         "title": "Insert Date"
       },
       {
-        "command": "obsd.insertTime",
+        "command": "mdlg.insertTime",
         "title": "Insert Time"
       },
       {
-        "command": "obsd.preview",
+        "command": "mdlg.preview",
         "title": "Preview Markdown"
       },
       {
-        "command": "obsd.openDailyNote",
+        "command": "mdlg.openDailyNote",
         "title": "Open Daily Note"
       },
       {
-        "command": "obsd.handleEnterKey",
+        "command": "mdlg.handleEnterKey",
         "title": "Handle Enter Key"
       }
     ],
     "keybindings": [
       {
-        "command": "obsd.openOrCreateWikiLink",
+        "command": "mdlg.openOrCreateWikiLink",
         "key": "ctrl+enter",
         "mac": "cmd+enter",
-        "when": "editorTextFocus && obsd.inWikiLink"
+        "when": "editorTextFocus && mdlg.inWikiLink"
       },
       {
-        "command": "obsd.insertDate",
+        "command": "mdlg.insertDate",
         "key": "alt+d",
         "when": "editorTextFocus"
       },
       {
-        "command": "obsd.insertTime",
+        "command": "mdlg.insertTime",
         "key": "alt+t", 
         "when": "editorTextFocus"
       }
     ],
     "configuration": {
-      "title": "Obsidian for Code",
+      "title": "MDloggerForCode",
       "properties": {
-        "obsd.vaultRoot": {
+        "mdlg.vaultRoot": {
           "type": "string",
           "default": "",
           "description": "Vault root directory path"
         },
-        "obsd.noteExtension": {
+        "mdlg.noteExtension": {
           "type": "string", 
           "default": ".md",
           "description": "Note file extension"
         },
-        "obsd.slugStrategy": {
+        "mdlg.slugStrategy": {
           "type": "string",
           "enum": ["passthrough", "kebab-case", "snake_case"],
           "default": "passthrough",
           "description": "File name transformation strategy"
         },
-        "obsd.dateFormat": {
+        "mdlg.dateFormat": {
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date insertion format"
         },
-        "obsd.timeFormat": {
+        "mdlg.timeFormat": {
           "type": "string", 
           "default": "HH:mm",
           "description": "Time insertion format"
         },
-        "obsd.template": {
+        "mdlg.template": {
           "type": "string",
           "default": "",
           "description": "New note template"
         },
-        "obsd.dailyNoteEnabled": {
+        "mdlg.dailyNoteEnabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable or disable DailyNote functionality"
         },
-        "obsd.dailyNotePath": {
+        "mdlg.dailyNotePath": {
           "type": "string",
           "default": "dailynotes",
           "description": "Daily notes directory path (relative to vault root)"
         },
-        "obsd.dailyNoteTemplate": {
+        "mdlg.dailyNoteTemplate": {
           "type": "string",
           "default": "",
           "description": "Daily note template file path (relative to vault root)"
         },
-        "obsd.dailyNoteKeybindingGuide": {
+        "mdlg.dailyNoteKeybindingGuide": {
           "type": "string",
           "default": "Follow the steps below",
           "readonly": true,
           "description": "How to configure DailyNote keyboard shortcut",
-          "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\\n\\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\\n2. Type `Preferences: Open Keyboard Shortcuts`\\n3. Search for `obsd.openDailyNote`\\n4. Click the `+` icon to set your preferred key combination\\n\\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\\n\\n*This setting is for guidance only and cannot be edited.*"
+          "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\\n\\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\\n2. Type `Preferences: Open Keyboard Shortcuts`\\n3. Search for `mdlg.openDailyNote`\\n4. Click the `+` icon to set your preferred key combination\\n\\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\\n\\n*This setting is for guidance only and cannot be edited.*"
         }
       }
     }
@@ -198,7 +198,7 @@ import { CommandHandler } from './handlers/CommandHandler';
 import { ContextManager } from './managers/ContextManager';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('ObsidianForCode extension is now active');
+    console.log('MDloggerForCode Extension is now active');
     
     // プロバイダー登録
     const wikiLinkProvider = new WikiLinkProvider();
@@ -217,20 +217,20 @@ export function activate(context: vscode.ExtensionContext) {
     // Webviewプロバイダー登録
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
-            'obsd.preview',
+            'mdlg.preview',
             previewProvider
         )
     );
     
     // コマンド登録
     context.subscriptions.push(
-        vscode.commands.registerCommand('obsd.openOrCreateWikiLink', 
+        vscode.commands.registerCommand('mdlg.openOrCreateWikiLink', 
             () => commandHandler.openOrCreateWikiLink()),
-        vscode.commands.registerCommand('obsd.insertDate',
+        vscode.commands.registerCommand('mdlg.insertDate',
             () => commandHandler.insertDate()),
-        vscode.commands.registerCommand('obsd.insertTime',
+        vscode.commands.registerCommand('mdlg.insertTime',
             () => commandHandler.insertTime()),
-        vscode.commands.registerCommand('obsd.preview',
+        vscode.commands.registerCommand('mdlg.preview',
             () => previewProvider.show())
     );
     
@@ -719,7 +719,7 @@ export class ConfigurationManager {
 import * as vscode from 'vscode';
 
 export class ContextManager {
-    private static readonly CONTEXT_KEY = 'obsd.inWikiLink';
+    private static readonly CONTEXT_KEY = 'mdlg.inWikiLink';
     
     /**
      * エディタ選択位置変更時にコンテキスト更新
@@ -780,7 +780,7 @@ export enum ErrorSeverity {
 }
 
 export class ErrorHandler {
-    private static readonly OUTPUT_CHANNEL_NAME = 'Obsidian for Code';
+    private static readonly OUTPUT_CHANNEL_NAME = 'MDloggerForCode';
     private static outputChannel: vscode.OutputChannel;
     
     static initialize(): void {
@@ -795,9 +795,9 @@ export class ErrorHandler {
         
         // エラー/警告の場合はユーザーに通知
         if (severity === ErrorSeverity.ERROR) {
-            vscode.window.showErrorMessage(`Obsidian for Code: ${message}`);
+            vscode.window.showErrorMessage(`MDloggerForCode: ${message}`);
         } else if (severity === ErrorSeverity.WARNING) {
-            vscode.window.showWarningMessage(`Obsidian for Code: ${message}`);
+            vscode.window.showWarningMessage(`MDloggerForCode: ${message}`);
         }
     }
     
@@ -895,7 +895,7 @@ private isPositionInWikiLink(document: vscode.TextDocument, position: vscode.Pos
 ```typescript
 // src/extension.ts - 実装済み
 export function activate(context: vscode.ExtensionContext) {
-    console.log('[INIT] ObsidianForCode extension is now active');
+    console.log('[INIT] MDloggerForCode Extension is now active');
     console.log('[INIT] Extension context:', context.extensionPath);
     console.log('[INIT] Workspace folders:', vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath));
 
@@ -1063,7 +1063,7 @@ export function activate(context: vscode.ExtensionContext) {
     const dailyNoteManager = new DailyNoteManager(configManager, dateTimeFormatter);
 
     // コマンド登録
-    const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+    const dailyNoteCommand = vscode.commands.registerCommand('mdlg.openDailyNote', async () => {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
@@ -1089,12 +1089,12 @@ export function activate(context: vscode.ExtensionContext) {
   "contributes": {
     "configuration": {
       "properties": {
-        "obsd.dailyNoteTemplate": {
+        "mdlg.dailyNoteTemplate": {
           "type": "string",
           "default": "",
           "description": "Daily note template file path (relative to vault root)"
         },
-        "obsd.dailyNotePath": {
+        "mdlg.dailyNotePath": {
           "type": "string",
           "default": "dailynotes",
           "description": "Daily notes directory path (relative to vault root)"
@@ -1103,14 +1103,14 @@ export function activate(context: vscode.ExtensionContext) {
     },
     "commands": [
       {
-        "command": "obsd.openDailyNote",
-        "title": "Obsidian for Code: Open Daily Note",
-        "category": "Obsidian for Code"
+        "command": "mdlg.openDailyNote",
+        "title": "MDloggerForCode: Open Daily Note",
+        "category": "MDloggerForCode"
       }
     ],
     "keybindings": [
       {
-        "command": "obsd.openDailyNote",
+        "command": "mdlg.openDailyNote",
         "key": "ctrl+shift+d",
         "mac": "cmd+shift+d",
         "when": "editorTextFocus"
@@ -1166,7 +1166,7 @@ export function activate(context: vscode.ExtensionContext) {
             dailyNoteManager = new DailyNoteManager(configManager, dateTimeFormatter);
 
             // コマンド登録（有効時のみ）
-            const dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+            const dailyNoteCommand = vscode.commands.registerCommand('mdlg.openDailyNote', async () => {
                 const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                 if (!workspaceFolder) {
                     vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
@@ -1213,12 +1213,12 @@ export class ConfigurationManager {
 ```json
 // package.json - 改善後設定
 {
-  "obsd.dailyNoteKeybindingGuide": {
+  "mdlg.dailyNoteKeybindingGuide": {
     "type": "string",
     "default": "Follow the steps below",
     "readonly": true,
     "description": "How to configure DailyNote keyboard shortcut",
-    "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\\n\\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\\n2. Type `Preferences: Open Keyboard Shortcuts`\\n3. Search for `obsd.openDailyNote`\\n4. Click the `+` icon to set your preferred key combination\\n\\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\\n\\n*This setting is for guidance only and cannot be edited.*"
+    "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\\n\\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\\n2. Type `Preferences: Open Keyboard Shortcuts`\\n3. Search for `mdlg.openDailyNote`\\n4. Click the `+` icon to set your preferred key combination\\n\\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\\n\\n*This setting is for guidance only and cannot be edited.*"
   }
 }
 ```
@@ -1384,7 +1384,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // openOrCreateWikiLink コマンド
         try {
-            const openCommand = vscode.commands.registerCommand('obsd.openOrCreateWikiLink', () => {
+            const openCommand = vscode.commands.registerCommand('mdlg.openOrCreateWikiLink', () => {
                 return openOrCreateWikiLink(configManager);
             });
             commands.push(openCommand);
@@ -1394,7 +1394,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // insertDate コマンド
         try {
-            const dateCommand = vscode.commands.registerCommand('obsd.insertDate', () => {
+            const dateCommand = vscode.commands.registerCommand('mdlg.insertDate', () => {
                 return insertDate(configManager, dateTimeFormatter);
             });
             commands.push(dateCommand);
@@ -1404,16 +1404,16 @@ export function activate(context: vscode.ExtensionContext) {
 
         // エラー報告（但し拡張機能は継続）
         if (errors.length > 0) {
-            console.warn('[ObsidianForCode] Some commands failed to register:', errors);
+            console.warn('[MDloggerForCode] Some commands failed to register:', errors);
             vscode.window.showWarningMessage(
-                `ObsidianForCode: ${errors.length} command(s) failed to register. Check output panel for details.`
+                `MDloggerForCode: ${errors.length} command(s) failed to register. Check output panel for details.`
             );
         }
 
         context.subscriptions.push(...commands);
     } catch (error) {
-        vscode.window.showErrorMessage('ObsidianForCode: Critical initialization failure');
-        console.error('[ObsidianForCode] Critical error:', error);
+        vscode.window.showErrorMessage('MDloggerForCode: Critical initialization failure');
+        console.error('[MDloggerForCode] Critical error:', error);
     }
 }
 ```
@@ -1561,11 +1561,11 @@ describe('PathUtil', () => {
 VS Code拡張機能の起動時に以下のエラーが発生：
 
 ```
-Error: Cannot find module 'c:\Users\RYOIKEDA\Documents\training\obsidianForCode\out\src\extension.js'
-Activating extension obsidianforcode.obsidianforcode failed due to an error
+Error: Cannot find module 'c:\Users\RYOIKEDA\Documents\training\MDloggerForCode\out\src\extension.js'
+Activating extension MDloggerForCode.MDloggerForCode failed due to an error
 ```
 
-エラーログの詳細分析により、VS Codeが`obsd.openDailyNote`コマンドで拡張機能を起動しようとしているが、package.jsonの`activationEvents`にこのコマンドが含まれていないことが判明。
+エラーログの詳細分析により、VS Codeが`mdlg.openDailyNote`コマンドで拡張機能を起動しようとしているが、package.jsonの`activationEvents`にこのコマンドが含まれていないことが判明。
 
 ### 16.2 根本原因分析
 
@@ -1574,18 +1574,18 @@ Activating extension obsidianforcode.obsidianforcode failed due to an error
 // 問題のあった設定
 "activationEvents": [
   "onLanguage:markdown",
-  "onCommand:obsd.openOrCreateWikiLink",
-  "onCommand:obsd.insertDate",
-  "onCommand:obsd.insertTime",
-  "onCommand:obsd.preview"
-  // ❌ "onCommand:obsd.openDailyNote" が欠落
+  "onCommand:mdlg.openOrCreateWikiLink",
+  "onCommand:mdlg.insertDate",
+  "onCommand:mdlg.insertTime",
+  "onCommand:mdlg.preview"
+  // ❌ "onCommand:mdlg.openDailyNote" が欠落
 ]
 
 // commands定義には存在
 "commands": [
   {
-    "command": "obsd.openDailyNote",  // ✅ コマンドは定義済み
-    "title": "Obsidian for Code: Open Daily Note"
+    "command": "mdlg.openDailyNote",  // ✅ コマンドは定義済み
+    "title": "MDloggerForCode: Open Daily Note"
   }
 ]
 ```
@@ -1603,11 +1603,11 @@ package.jsonの`activationEvents`配列に欠落していたイベントを追�
 ```json
 "activationEvents": [
   "onLanguage:markdown",
-  "onCommand:obsd.openOrCreateWikiLink",
-  "onCommand:obsd.insertDate",
-  "onCommand:obsd.insertTime",
-  "onCommand:obsd.preview",
-  "onCommand:obsd.openDailyNote"  // ✅ 追加
+  "onCommand:mdlg.openOrCreateWikiLink",
+  "onCommand:mdlg.insertDate",
+  "onCommand:mdlg.insertTime",
+  "onCommand:mdlg.preview",
+  "onCommand:mdlg.openDailyNote"  // ✅ 追加
 ]
 ```
 
@@ -2061,12 +2061,12 @@ export class ListContinuationProvider {
 #### 17.5.1 新規設定
 ```json
 {
-  "obsd.listContinuationEnabled": {
+  "mdlg.listContinuationEnabled": {
     "type": "boolean",
     "default": true,
     "description": "Enable automatic continuation of lists and checkboxes when pressing Enter"
   },
-  "obsd.searchSubdirectories": {
+  "mdlg.searchSubdirectories": {
     "type": "boolean",
     "default": true,
     "description": "Search subdirectories when opening WikiLinks. If disabled, only creates new files at the root level even when same-named files exist in subdirectories"
@@ -2220,7 +2220,7 @@ export function activate(context: vscode.ExtensionContext) {
     // リスト自動継続
     const listProvider = new ListContinuationProvider(configManager);
     context.subscriptions.push(
-        vscode.commands.registerCommand('obsd.handleEnterKey', async () => {
+        vscode.commands.registerCommand('mdlg.handleEnterKey', async () => {
             const editor = vscode.window.activeTextEditor;
             if (editor) {
                 const handled = await listProvider.handleEnterKey(editor);
@@ -2233,7 +2233,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 条件付きサブディレクトリ検索
     const openOrCreateCommand = vscode.commands.registerCommand(
-        'obsd.openOrCreateWikiLink',
+        'mdlg.openOrCreateWikiLink',
         async () => {
             const editor = vscode.window.activeTextEditor;
             if (!editor) return;
@@ -2279,7 +2279,7 @@ export function activate(context: vscode.ExtensionContext) {
 {
   "activationEvents": [
     "onLanguage:markdown",
-    "onCommand:obsd.handleEnterKey"
+    "onCommand:mdlg.handleEnterKey"
   ]
 }
 ```
@@ -2310,10 +2310,10 @@ export function activate(context: vscode.ExtensionContext) {
 ### 18.2 主要な設計決定
 - 実装方式: VS Code `WebviewViewProvider` を使用して右サイドバーを実装する。
 - 設定管理: 既存の `ConfigurationManager`（設定プレフィックス: `obsd`）に以下のキーを追加する。これらは `package.json` の `contributes.configuration` に登録する。
-    - `obsd.vaultPath` (string)
-    - `obsd.notesFolder` (string) — daily notes のディレクトリ
-    - `obsd.dailyNoteFormat` (string) — 例: `YYYY-MM-DD.md`
-    - `obsd.captureSectionName` (string) — 追記対象の見出し名（例: `Quick Notes`）
+    - `mdlg.vaultPath` (string)
+    - `mdlg.notesFolder` (string) — daily notes のディレクトリ
+    - `mdlg.dailyNoteFormat` (string) — 例: `YYYY-MM-DD.md`
+    - `mdlg.captureSectionName` (string) — 追記対象の見出し名（例: `Quick Notes`）
 
 ### 18.3 コントラクト（小さく明確に）
 - 入力: サイドバーのテキスト入力（短文）、ユーザ操作（追加、完了、編集）
@@ -2369,3 +2369,5 @@ TaskItem 型 (JSON 表現):
 **文書バージョン**: 1.7
 **最終更新**: 2025-10-30
 **更新内容**: Quick Capture Sidebar セクション追加
+
+

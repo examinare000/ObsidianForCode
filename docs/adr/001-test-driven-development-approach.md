@@ -7,7 +7,7 @@ Accepted
 2025-09-09
 
 ## Context
-ObsidianForCode VS Code extensionの開発において、高品質で保守性の高いコードベースを構築する必要がある。VS Code extension開発では、API依存により単体テストが困難になりがちで、リファクタリングや機能拡張時の回帰バグのリスクが高い。
+MDloggerForCode VS Code extensionの開発において、高品質で保守性の高いコードベースを構築する必要がある。VS Code extension開発では、API依存により単体テストが困難になりがちで、リファクタリングや機能拡張時の回帰バグのリスクが高い。
 
 ## Decision
 t-wadaの提唱するTDD（Test-Driven Development）を厳格に適用し、以下の原則に従って開発を進める：

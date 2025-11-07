@@ -96,7 +96,7 @@ describe('CommandHandler', () => {
         commandHandler.showMessage = () => {};
     });
     
-    describe('obsd.openOrCreateWikiLink コマンド', () => {
+    describe('mdlg.openOrCreateWikiLink コマンド', () => {
         it('カーソル位置のWikiLinkを検出できる', async () => {
             // カーソルを[[Test Link]]の中に置く
             mockEditor.selection = {
@@ -157,7 +157,7 @@ describe('CommandHandler', () => {
         });
     });
     
-    describe('obsd.insertDate コマンド', () => {
+    describe('mdlg.insertDate コマンド', () => {
         it('現在の日付を挿入する', async () => {
             const result = await commandHandler.insertDate();
             expect(result).to.be.true;
@@ -177,7 +177,7 @@ describe('CommandHandler', () => {
         });
     });
     
-    describe('obsd.insertTime コマンド', () => {
+    describe('mdlg.insertTime コマンド', () => {
         it('現在の時刻を挿入する', async () => {
             const result = await commandHandler.insertTime();
             expect(result).to.be.true;
@@ -197,7 +197,7 @@ describe('CommandHandler', () => {
         });
     });
     
-    describe('obsd.preview コマンド', () => {
+    describe('mdlg.preview コマンド', () => {
         it('現在のドキュメントのプレビューを開く', async () => {
             const result = await commandHandler.showPreview();
             expect(result).to.be.true;

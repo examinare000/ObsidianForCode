@@ -3,7 +3,7 @@
  * Provides safe path handling, file name sanitization, and URI creation utilities
  * with support for both absolute and relative paths across different operating systems.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

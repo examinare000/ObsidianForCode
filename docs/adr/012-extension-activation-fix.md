@@ -11,29 +11,29 @@
 VS Code拡張機能の起動時に以下のエラーが発生していた：
 
 ```
-Error: Cannot find module 'c:\Users\RYOIKEDA\Documents\training\obsidianForCode\out\src\extension.js'
+Error: Cannot find module 'c:\Users\RYOIKEDA\Documents\training\MDloggerForCode\out\src\extension.js'
 ```
 
-エラーログから、VS Codeが`obsd.openDailyNote`コマンドの実行時に拡張機能を起動しようとしているが、package.jsonの`activationEvents`にこのコマンドが含まれていないことが判明した。
+エラーログから、VS Codeが`mdlg.openDailyNote`コマンドの実行時に拡張機能を起動しようとしているが、package.jsonの`activationEvents`にこのコマンドが含まれていないことが判明した。
 
 ## 問題分析
 
 1. **症状**: 特定のコマンド実行時に拡張機能の起動が失敗
-2. **原因**: package.jsonの`activationEvents`に`onCommand:obsd.openDailyNote`が欠落
+2. **原因**: package.jsonの`activationEvents`に`onCommand:mdlg.openDailyNote`が欠落
 3. **影響範囲**: DailyNote機能の完全な動作不能
 
 ## 解決策
 
-package.jsonの`activationEvents`配列に`"onCommand:obsd.openDailyNote"`を追加：
+package.jsonの`activationEvents`配列に`"onCommand:mdlg.openDailyNote"`を追加：
 
 ```json
 "activationEvents": [
   "onLanguage:markdown",
-  "onCommand:obsd.openOrCreateWikiLink",
-  "onCommand:obsd.insertDate",
-  "onCommand:obsd.insertTime",
-  "onCommand:obsd.preview",
-  "onCommand:obsd.openDailyNote"  // 追加
+  "onCommand:mdlg.openOrCreateWikiLink",
+  "onCommand:mdlg.insertDate",
+  "onCommand:mdlg.insertTime",
+  "onCommand:mdlg.preview",
+  "onCommand:mdlg.openDailyNote"  // 追加
 ]
 ```
 

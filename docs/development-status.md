@@ -1,7 +1,7 @@
 # 開発状況レポート
 
 ## プロジェクト概要
-**ObsidianForCode** - WikiLinkによってネットワーク化されたログノート機能をVS Codeで提供するextension
+**MDloggerForCode** - WikiLinkによってネットワーク化されたログノート機能をVS Codeで提供するextension
 
 ## 開発完了状況
 
@@ -18,7 +18,7 @@
 
 #### v0.4.7 WikiLink操作性改善 (2025-10-04)
 - ✅ **キーバインド境界検出の補強**
-  - `obsd.inWikiLink` が `]]` 上でも true を維持し、Ctrl/Cmd+Enter が確実に発火
+  - `mdlg.inWikiLink` が `]]` 上でも true を維持し、Ctrl/Cmd+Enter が確実に発火
 - ✅ **リンク解決の精度向上**
   - DocumentLinkProvider が `NoteFinder` を介してサブディレクトリの既存ノートURIを優先
 - ✅ **WikiLink補完の安定化**
@@ -111,7 +111,7 @@
   - 日時挿入機能
   - テスト: 17個
 - ✅ **WikiLinkContextProvider** - キーバインドコンテキスト管理
-  - `obsd.inWikiLink` コンテキスト検出
+  - `mdlg.inWikiLink` コンテキスト検出
   - リアルタイムカーソル位置追跡
 - ✅ **WikiLinkCompletionProvider** - WikiLink補完機能
   - ブラケット内での自動補完
@@ -241,3 +241,4 @@
 **Date: 2025-10-04**
 **Quality: 221/231 tests passing (95.7%)**
 **Branch: main**
+

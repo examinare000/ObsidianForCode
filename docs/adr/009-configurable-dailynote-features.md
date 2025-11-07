@@ -22,7 +22,7 @@ DailyNote機能の初期実装（ADR-008）では、機能が常に有効でキ�
 #### 1.1 機能有効/無効トグル
 ```json
 {
-  "obsd.dailyNoteEnabled": {
+  "mdlg.dailyNoteEnabled": {
     "type": "boolean",
     "default": true,
     "description": "Enable or disable DailyNote functionality"
@@ -33,11 +33,11 @@ DailyNote機能の初期実装（ADR-008）では、機能が常に有効でキ�
 #### 1.2 キーバインド案内設定
 ```json
 {
-  "obsd.dailyNoteKeybinding": {
+  "mdlg.dailyNoteKeybinding": {
     "type": "string",
     "default": "ctrl+shift+d",
     "description": "Preferred keyboard shortcut for opening daily note...",
-    "markdownDescription": "Preferred keyboard shortcut for opening daily note.\n\n**To set this:**\n1. Open Command Palette (`Ctrl+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search `obsd.openDailyNote`\n4. Set your preferred key combination"
+    "markdownDescription": "Preferred keyboard shortcut for opening daily note.\n\n**To set this:**\n1. Open Command Palette (`Ctrl+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search `mdlg.openDailyNote`\n4. Set your preferred key combination"
   }
 }
 ```
@@ -79,7 +79,7 @@ if (configManager.getDailyNoteEnabled()) {
 // DailyNoteコマンドは設定により条件付きで登録
 let dailyNoteCommand: vscode.Disposable | undefined;
 if (dailyNoteManager) {
-    dailyNoteCommand = vscode.commands.registerCommand('obsd.openDailyNote', async () => {
+    dailyNoteCommand = vscode.commands.registerCommand('mdlg.openDailyNote', async () => {
         // コマンド実装
     });
 }
@@ -96,7 +96,7 @@ VS Code の制約により、拡張機能から動的にキーバインドを変
 #### 4.1 ユーザガイド方式
 - 設定項目に詳細な手順を記載
 - MarkdownDescription を活用した視覚的な案内
-- コマンドID (`obsd.openDailyNote`) を明記して手動設定を支援
+- コマンドID (`mdlg.openDailyNote`) を明記して手動設定を支援
 
 #### 4.2 package.json からの固定キーバインド削除
 - 固定キーバインドを削除してユーザの自由度を向上
@@ -154,3 +154,4 @@ VS Code の Contribution Points 拡張により、より柔軟なキーバイン
 **承認者**: [TBD]
 **実装日**: 2025-09-18
 **関連ADR**: ADR-008 (DailyNote機能設計)
+

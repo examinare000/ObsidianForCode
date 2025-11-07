@@ -1,8 +1,8 @@
-# ObsidianForCode 要件定義書
+# MDloggerForCode 要件定義書
 
 ## 1. プロジェクト概要
 
-**プロダクト名**: ObsidianForCode  
+**プロダクト名**: MDloggerForCode  
 **目的**: VS Code上でObsidianの基本機能を提供する拡張機能  
 **対象環境**: VS Code Desktop（Windows/Mac/Linux、Remote/WSL/Dev Containers対応）
 
@@ -38,12 +38,12 @@
 ### 2.2 設定機能
 | 要件ID | 設定項目 | デフォルト値 | 説明 |
 |--------|----------|--------------|------|
-| F014 | obsd.vaultRoot | ワークスペースルート | Vaultのルートディレクトリ |
-| F015 | obsd.noteExtension | .md | ノートファイルの拡張子 |
-| F016 | obsd.slugStrategy | passthrough | ファイル名変換方式 |
-| F017 | obsd.dateFormat | YYYY-MM-DD | 日付挿入フォーマット |
-| F018 | obsd.timeFormat | HH:mm | 時刻挿入フォーマット |
-| F019 | obsd.template | 空文字 | 新規ノートテンプレート |
+| F014 | mdlg.vaultRoot | ワークスペースルート | Vaultのルートディレクトリ |
+| F015 | mdlg.noteExtension | .md | ノートファイルの拡張子 |
+| F016 | mdlg.slugStrategy | passthrough | ファイル名変換方式 |
+| F017 | mdlg.dateFormat | YYYY-MM-DD | 日付挿入フォーマット |
+| F018 | mdlg.timeFormat | HH:mm | 時刻挿入フォーマット |
+| F019 | mdlg.template | 空文字 | 新規ノートテンプレート |
 
 ## 3. 技術要件
 

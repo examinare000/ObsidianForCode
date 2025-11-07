@@ -5,7 +5,7 @@ import { TaskService } from '../services/TaskService';
 import { VscodeFileWriter } from '../services/FileWriter';
 
 export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
-    public static readonly viewId = 'obsd.quickCapture';
+    public static readonly viewId = 'mdlg.quickCapture';
     private view?: vscode.WebviewView;
     private taskServiceInstance?: TaskService;
 

@@ -1,9 +1,9 @@
 {
-  "name": "obsidianforcode",
-  "displayName": "Obsidian for Code (DEBUG)",
+  "name": "mdloggerforcode",
+  "displayName": "MDloggerForCode (DEBUG)",
   "description": "Obsidian-like WikiLink functionality for VS Code",
   "version": "0.1.4-debug",
-  "publisher": "obsidianforcode",
+  "publisher": "mdloggerforcode",
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -24,95 +24,95 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/obsidianforcode/obsidianforcode.git"
+    "url": "https://github.com/mdloggerforcode/mdloggerforcode.git"
   },
-  "homepage": "https://github.com/obsidianforcode/obsidianforcode#readme",
+  "homepage": "https://github.com/mdloggerforcode/mdloggerforcode#readme",
   "bugs": {
-    "url": "https://github.com/obsidianforcode/obsidianforcode/issues"
+    "url": "https://github.com/mdloggerforcode/mdloggerforcode/issues"
   },
   "activationEvents": [
     "onLanguage:markdown",
-    "onCommand:obsd.openQuickCapture"
+    "onCommand:mdlg.openQuickCapture"
   ],
   "main": "./out/src/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "obsd.openOrCreateWikiLink",
-        "title": "Obsidian for Code: Open or Create Wiki Link",
-        "category": "Obsidian for Code"
+        "command": "mdlg.openOrCreateWikiLink",
+        "title": "MDloggerForCode: Open or Create Wiki Link",
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.insertDate",
-        "title": "Obsidian for Code: Insert Date",
-        "category": "Obsidian for Code"
+        "command": "mdlg.insertDate",
+        "title": "MDloggerForCode: Insert Date",
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.insertTime",
-        "title": "Obsidian for Code: Insert Time",
-        "category": "Obsidian for Code"
+        "command": "mdlg.insertTime",
+        "title": "MDloggerForCode: Insert Time",
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.preview",
-        "title": "Obsidian for Code: Preview Markdown",
-        "category": "Obsidian for Code"
+        "command": "mdlg.preview",
+        "title": "MDloggerForCode: Preview Markdown",
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.test",
-        "title": "Obsidian for Code: Test Command",
-        "category": "Obsidian for Code"
+        "command": "mdlg.test",
+        "title": "MDloggerForCode: Test Command",
+        "category": "MDloggerForCode"
       },
       {
-        "command": "obsd.openQuickCapture",
-        "title": "Obsidian for Code: Open Quick Capture",
-        "category": "Obsidian for Code"
+        "command": "mdlg.openQuickCapture",
+        "title": "MDloggerForCode: Open Quick Capture",
+        "category": "MDloggerForCode"
       }
     ],
     "views": {
       "explorer": [
         {
-          "id": "obsd.quickCapture",
+          "id": "mdlg.quickCapture",
           "name": "Quick Capture"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "obsd.openOrCreateWikiLink",
+        "command": "mdlg.openOrCreateWikiLink",
         "key": "ctrl+enter",
         "mac": "cmd+enter",
-        "when": "editorTextFocus && obsd.inWikiLink"
+        "when": "editorTextFocus && mdlg.inWikiLink"
       },
       {
-        "command": "obsd.insertDate",
+        "command": "mdlg.insertDate",
         "key": "alt+d",
         "when": "editorTextFocus"
       },
       {
-        "command": "obsd.insertTime",
+        "command": "mdlg.insertTime",
         "key": "alt+t",
         "when": "editorTextFocus"
       },
       {
-        "command": "obsd.openQuickCapture",
+        "command": "mdlg.openQuickCapture",
         "key": "ctrl+alt+m",
         "when": "editorTextFocus"
       }
     ],
     "configuration": {
-      "title": "Obsidian for Code",
+      "title": "MDloggerForCode",
       "properties": {
-        "obsd.vaultRoot": {
+        "mdlg.vaultRoot": {
           "type": "string",
           "default": "",
           "description": "Vault root directory path"
         },
-        "obsd.noteExtension": {
+        "mdlg.noteExtension": {
           "type": "string",
           "default": ".md",
           "description": "Note file extension"
         },
-        "obsd.slugStrategy": {
+        "mdlg.slugStrategy": {
           "type": "string",
           "enum": [
             "passthrough",
@@ -122,32 +122,32 @@
           "default": "passthrough",
           "description": "File name transformation strategy"
         },
-        "obsd.dateFormat": {
+        "mdlg.dateFormat": {
           "type": "string",
           "default": "YYYY-MM-DD",
           "description": "Date insertion format"
         },
-        "obsd.timeFormat": {
+        "mdlg.timeFormat": {
           "type": "string",
           "default": "HH:mm",
           "description": "Time insertion format"
         },
-        "obsd.template": {
+        "mdlg.template": {
           "type": "string",
           "default": "",
           "description": "New note template"
         },
-        "obsd.notesFolder": {
+        "mdlg.notesFolder": {
           "type": "string",
           "default": "dailynotes",
           "description": "Daily notes directory path (relative to vault root)"
         },
-        "obsd.dailyNoteFormat": {
+        "mdlg.dailyNoteFormat": {
           "type": "string",
           "default": "YYYY-MM-DD.md",
           "description": "Daily note file name format"
         },
-        "obsd.captureSectionName": {
+        "mdlg.captureSectionName": {
           "type": "string",
           "default": "Quick Capture",
           "description": "Section heading name inside the daily note to append captured items"

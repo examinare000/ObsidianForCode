@@ -1,8 +1,8 @@
 /**
- * @fileoverview Daily note management functionality for Obsidian for Code extension.
+ * @fileoverview Daily note management functionality for MDloggerForCode extension.
  * Provides automated daily note creation, template management, and date-based file organization.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

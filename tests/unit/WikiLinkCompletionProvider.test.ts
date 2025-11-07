@@ -2,7 +2,7 @@
  * @fileoverview Unit tests for WikiLinkCompletionProvider.
  * Tests WikiLink autocomplete suggestions functionality.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

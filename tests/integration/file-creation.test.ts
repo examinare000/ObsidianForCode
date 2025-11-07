@@ -21,7 +21,7 @@ describe('File Creation Integration Tests', function() {
         console.log(`Test workspace: ${testWorkspaceUri.fsPath}`);
 
         // ConfigurationManagerのセットアップ（グローバルモックを使用）
-        const config = vscode.workspace.getConfiguration('obsd');
+        const config = vscode.workspace.getConfiguration('mdlg');
         configManager = new ConfigurationManager(config);
     });
 

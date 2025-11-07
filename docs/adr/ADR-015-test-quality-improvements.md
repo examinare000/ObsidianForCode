@@ -175,3 +175,4 @@ item.range = new vscode.Range(
 - ADR-013: Node.js path.isAbsolute Adoption
 - ADR-011: Windows File Path Handling
 - ADR-002: VS Code API Abstraction Layer
+

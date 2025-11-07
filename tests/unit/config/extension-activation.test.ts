@@ -65,11 +65,11 @@ describe('Extension Activation Configuration', () => {
 
             // 必須コマンドリスト
             const requiredCommands = [
-                'obsd.openOrCreateWikiLink',
-                'obsd.insertDate',
-                'obsd.insertTime',
-                'obsd.preview',
-                'obsd.openDailyNote'  // ADR-012で修正されたコマンド
+                'mdlg.openOrCreateWikiLink',
+                'mdlg.insertDate',
+                'mdlg.insertTime',
+                'mdlg.preview',
+                'mdlg.openDailyNote'  // ADR-012で修正されたコマンド
             ];
 
             requiredCommands.forEach(requiredCommand => {
@@ -86,11 +86,11 @@ describe('Extension Activation Configuration', () => {
             // 必須activationEventリスト
             const requiredActivationEvents = [
                 'onLanguage:markdown',
-                'onCommand:obsd.openOrCreateWikiLink',
-                'onCommand:obsd.insertDate',
-                'onCommand:obsd.insertTime',
-                'onCommand:obsd.preview',
-                'onCommand:obsd.openDailyNote'  // ADR-012で追加されたイベント
+                'onCommand:mdlg.openOrCreateWikiLink',
+                'onCommand:mdlg.insertDate',
+                'onCommand:mdlg.insertTime',
+                'onCommand:mdlg.preview',
+                'onCommand:mdlg.openDailyNote'  // ADR-012で追加されたイベント
             ];
 
             requiredActivationEvents.forEach(requiredEvent => {
@@ -125,7 +125,7 @@ describe('Extension Activation Configuration', () => {
 
         it('コマンドIDが正しいプレフィックスを持つこと', () => {
             const commands = packageJson.contributes.commands || [];
-            const expectedPrefix = 'obsd.';
+            const expectedPrefix = 'mdlg.';
 
             commands.forEach((command: any) => {
                 expect(
@@ -138,8 +138,8 @@ describe('Extension Activation Configuration', () => {
 
     describe('package.json構造の妥当性', () => {
         it('拡張機能メタデータが適切に設定されていること', () => {
-            expect(packageJson.name).to.equal('obsidianforcode');
-            expect(packageJson.displayName).to.equal('Obsidian for Code');
+            expect(packageJson.name).to.equal('mdloggerforcode');
+            expect(packageJson.displayName).to.equal('MDloggerForCode');
             expect(packageJson.main).to.equal('./out/src/extension.js');
         });
 
@@ -156,13 +156,13 @@ describe('Extension Activation Configuration', () => {
     });
 
     describe('回帰防止テスト - ADR-012', () => {
-        it('obsd.openDailyNote コマンドのactivationEventが存在すること', () => {
+        it('mdlg.openDailyNote コマンドのactivationEventが存在すること', () => {
             const activationEvents = packageJson.activationEvents || [];
 
             expect(
                 activationEvents,
-                'ADR-012で修正された obsd.openDailyNote のactivationEventが欠落しています'
-            ).to.include('onCommand:obsd.openDailyNote');
+                'ADR-012で修正された mdlg.openDailyNote のactivationEventが欠落しています'
+            ).to.include('onCommand:mdlg.openDailyNote');
         });
 
         it('DailyNote関連の設定が適切に定義されていること', () => {
@@ -171,10 +171,10 @@ describe('Extension Activation Configuration', () => {
 
             // DailyNote関連の設定項目をチェック
             const dailyNoteSettings = [
-                'obsd.dailyNoteEnabled',
-                'obsd.dailyNotePath',
-                'obsd.dailyNoteTemplate',
-                'obsd.dailyNoteKeybindingGuide'
+                'mdlg.dailyNoteEnabled',
+                'mdlg.dailyNotePath',
+                'mdlg.dailyNoteTemplate',
+                'mdlg.dailyNoteKeybindingGuide'
             ];
 
             dailyNoteSettings.forEach(setting => {
@@ -187,10 +187,10 @@ describe('Extension Activation Configuration', () => {
 
         it('DailyNoteコマンドが適切なカテゴリに分類されていること', () => {
             const commands = packageJson.contributes.commands || [];
-            const dailyNoteCommand = commands.find((cmd: any) => cmd.command === 'obsd.openDailyNote');
+            const dailyNoteCommand = commands.find((cmd: any) => cmd.command === 'mdlg.openDailyNote');
 
-            expect(dailyNoteCommand, 'obsd.openDailyNote コマンドが見つかりません').to.exist;
-            expect(dailyNoteCommand.category).to.equal('Obsidian for Code');
+            expect(dailyNoteCommand, 'mdlg.openDailyNote コマンドが見つかりません').to.exist;
+            expect(dailyNoteCommand.category).to.equal('MDloggerForCode');
         });
     });
 });

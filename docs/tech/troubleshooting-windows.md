@@ -1,13 +1,13 @@
 # Windows環境開発者向けトラブルシューティング
 
-このドキュメントは、Windows環境でObsidianForCodeの開発を行う際に発生しうる特有の問題と、その解決策をまとめたものです。
+このドキュメントは、Windows環境でMDloggerForCodeの開発を行う際に発生しうる特有の問題と、その解決策をまとめたものです。
 
 ## 🔧 問題: 拡張機能は動作するが、コマンドが登録されない
 
 ### 症状
 
 - F5キーでデバッグ実行すると拡張機能は起動する
-- コマンドパレット（`Ctrl+Shift+P`）に "ObsidianForCode" 関連のコマンドが表示されない
+- コマンドパレット（`Ctrl+Shift+P`）に "MDloggerForCode" 関連のコマンドが表示されない
 - `Ctrl+Enter` などのキーボードショートカットが反応しない
 - 拡張機能の設定は表示されるが、実際の機能が使用できない
 
@@ -43,7 +43,7 @@
 
 3. **拡張機能出力確認**
    ```
-   VS Code > 出力 > ObsidianForCode
+   VS Code > 出力 > MDloggerForCode
    ```
    エラーメッセージやパス関連の警告を確認
 
@@ -78,7 +78,7 @@ code .
 シンボリックリンクの代わりにジャンクションを試す：
 ```cmd
 # mklink /D の代わり
-mklink /J "C:\Users\[user]\.vscode\extensions\obsidianforcode" "C:\dev\ObsidianForCode"
+mklink /J "C:\Users\[user]\.vscode\extensions\MDloggerForCode" "C:\dev\MDloggerForCode"
 ```
 
 #### 4. ファイルコピーによる開発フロー
@@ -87,7 +87,7 @@ mklink /J "C:\Users\[user]\.vscode\extensions\obsidianforcode" "C:\dev\ObsidianF
 ```bash
 # package.jsonに追加
 "scripts": {
-  "install-dev": "xcopy /E /I /Y . \"%USERPROFILE%\\.vscode\\extensions\\obsidianforcode\""
+  "install-dev": "xcopy /E /I /Y . \"%USERPROFILE%\\.vscode\\extensions\\MDloggerForCode\""
 }
 
 npm run install-dev
@@ -107,14 +107,14 @@ v0.4.5以降では `path.resolve()` と `path.join()` を適切に使用する�
 1. **設定確認**
    ```json
    {
-     "obsidianForCode.vaultRoot": "notes"  // 相対パス推奨
+     "MDloggerForCode.vaultRoot": "notes"  // 相対パス推奨
    }
    ```
 
 2. **絶対パスでの設定**
    ```json
    {
-     "obsidianForCode.vaultRoot": "C:\\Users\\username\\Documents\\vault"
+     "MDloggerForCode.vaultRoot": "C:\\Users\\username\\Documents\\vault"
    }
    ```
 
@@ -131,8 +131,8 @@ Windows予約名とファイル名制限に配慮した設定：
 
 ```json
 {
-  "obsidianForCode.dailyNoteFormat": "yyyy-MM-dd",  // ✅ Windows安全
-  "obsidianForCode.dailyNoteFormat": "yyyy/MM/dd"   // ❌ パス区切り文字のため不適切
+  "MDloggerForCode.dailyNoteFormat": "yyyy-MM-dd",  // ✅ Windows安全
+  "MDloggerForCode.dailyNoteFormat": "yyyy/MM/dd"   // ❌ パス区切り文字のため不適切
 }
 ```
 
@@ -150,7 +150,7 @@ code --version
 node --version
 
 # 拡張機能バージョン
-# VS Code > 拡張機能 > ObsidianForCode で確認
+# VS Code > 拡張機能 > MDloggerForCode で確認
 ```
 
 ### パス情報
@@ -165,7 +165,7 @@ console.log('Workspace folders:', vscode.workspace.workspaceFolders?.map(f => f.
 ### 拡張機能出力
 
 ```
-VS Code > 表示 > 出力 > ObsidianForCode
+VS Code > 表示 > 出力 > MDloggerForCode
 ```
 
 ---
@@ -174,4 +174,4 @@ VS Code > 表示 > 出力 > ObsidianForCode
 
 - [ADR-013: Node.js標準 path.isAbsolute の採用](../adr/013-nodejs-path-isabsolute-adoption.md)
 - [v0.4.5リリースノート](../releases/v0.4.5.md)
-- [Issue報告](https://github.com/obsidianforcode/obsidianforcode/issues)
+- [Issue報告](https://github.com/MDloggerForCode/MDloggerForCode/issues)
