@@ -3,13 +3,13 @@ import { expect } from 'chai';
 
 describe('デバッグ: パス解決問題の調査', () => {
     describe('VS Code設定模擬テスト', () => {
-        it('obsd.vaultRootが未設定の場合の動作', () => {
+        it('mdlg.vaultRootが未設定の場合の動作', () => {
             // VS Code設定のモック
             const mockVSCodeConfig = {
                 get<T>(key: string, defaultValue?: T): T {
                     console.log(`[Debug] Config get called with key: "${key}", defaultValue: "${defaultValue}"`);
 
-                    // obsd.vaultRoot が未設定の場合、空文字がデフォルト
+                    // mdlg.vaultRoot が未設定の場合、空文字がデフォルト
                     if (key === 'vaultRoot') {
                         const result = defaultValue || '';
                         console.log(`[Debug] Returning vaultRoot: "${result}"`);

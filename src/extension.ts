@@ -185,7 +185,7 @@ export function activate(context: vscode.ExtensionContext) {
                     // First, ensure Explorer is visible (where Quick Capture is located)
                     await vscode.commands.executeCommand('workbench.view.explorer');
                     // Then focus the Quick Capture view using the auto-generated .focus command
-                    await vscode.commands.executeCommand('obsd.quickCapture.focus');
+                    await vscode.commands.executeCommand('mdlg.quickCapture.focus');
                 } catch (error) {
                     vscode.window.showErrorMessage(`Failed to open Quick Capture view: ${error}`);
                 }

@@ -44,7 +44,7 @@ describe('WikiLink キーバインド統合テスト', () => {
     });
 
     describe('WikiLinkコンテキスト検出', () => {
-        it('Simple Pageリンク内でobsd.inWikiLinkがtrueになる', () => {
+        it('Simple Pageリンク内でmdlg.inWikiLinkがtrueになる', () => {
             // テストドキュメントの作成
             const testContent = '# Test Document\n\n- [[Simple Page]]\n- [[Another Note]]';
 
@@ -83,7 +83,7 @@ describe('WikiLink キーバインド統合テスト', () => {
             expect(mockContext).to.be.true;
         });
 
-        it('WikiLink外では obsd.inWikiLink が false になる', () => {
+        it('WikiLink外では mdlg.inWikiLink が false になる', () => {
             const testContent = '# Test Document\n\nThis is normal text. [[Simple Page]]';
 
             mockActiveEditor = {
