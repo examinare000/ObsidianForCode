@@ -204,7 +204,7 @@ describe('Configurable DailyNote Features (Isolated)', () => {
     describe('Settings UI improvement validation', () => {
         it('should confirm keybinding setting is guidance-only', () => {
             // ADR-010で決定された設定項目の検証
-            const settingName = 'obsd.dailyNoteKeybindingGuide';
+            const settingName = 'mdlg.dailyNoteKeybindingGuide';
             const setting = {
                 type: 'string',
                 default: 'Follow the steps below',
@@ -214,7 +214,7 @@ describe('Configurable DailyNote Features (Isolated)', () => {
 
             // 設定名が変更されている
             expect(settingName).to.include('Guide');
-            expect(settingName).to.not.equal('obsd.dailyNoteKeybinding');
+            expect(settingName).to.not.equal('mdlg.dailyNoteKeybinding');
 
             // readonly属性が設定されている
             expect(setting.readonly).to.be.true;

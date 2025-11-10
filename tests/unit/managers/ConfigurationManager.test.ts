@@ -7,8 +7,8 @@ describe('ConfigurationManager', () => {
     let configManager: ConfigurationManager;
 
     beforeEach(() => {
-        // Use global vscode mock with 'obsd' section
-        const config = vscode.workspace.getConfiguration('obsd');
+        // Use global vscode mock with 'mdlg' section
+        const config = vscode.workspace.getConfiguration('mdlg');
         configManager = new ConfigurationManager(config);
     });
 

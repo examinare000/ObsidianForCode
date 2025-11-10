@@ -14,13 +14,13 @@ describe('Design Conformance (Public Surface)', () => {
 
   it('commands match the documented set', () => {
     const expected = [
-      'obsd.handleEnterKey',
-      'obsd.insertDate',
-      'obsd.insertTime',
-      'obsd.openDailyNote',
-      'obsd.openOrCreateWikiLink',
-      'obsd.openQuickCapture',
-      'obsd.preview',
+      'mdlg.handleEnterKey',
+      'mdlg.insertDate',
+      'mdlg.insertTime',
+      'mdlg.openDailyNote',
+      'mdlg.openOrCreateWikiLink',
+      'mdlg.openQuickCapture',
+      'mdlg.preview',
     ].sort();
 
     const actual: string[] = (pkg.contributes?.commands || []).map((c: any) => c.command).sort();
@@ -30,13 +30,13 @@ describe('Design Conformance (Public Surface)', () => {
   it('activationEvents match the documented set', () => {
     const expected = [
       'onLanguage:markdown',
-      'onCommand:obsd.openOrCreateWikiLink',
-      'onCommand:obsd.insertDate',
-      'onCommand:obsd.insertTime',
-      'onCommand:obsd.openQuickCapture',
-      'onCommand:obsd.preview',
-      'onCommand:obsd.openDailyNote',
-      'onCommand:obsd.handleEnterKey',
+      'onCommand:mdlg.openOrCreateWikiLink',
+      'onCommand:mdlg.insertDate',
+      'onCommand:mdlg.insertTime',
+      'onCommand:mdlg.openQuickCapture',
+      'onCommand:mdlg.preview',
+      'onCommand:mdlg.openDailyNote',
+      'onCommand:mdlg.handleEnterKey',
     ].sort();
     const actual: string[] = (pkg.activationEvents || []).slice().sort();
     expect(actual).to.deep.equal(expected);
@@ -44,10 +44,10 @@ describe('Design Conformance (Public Surface)', () => {
 
   it('keybindings only reference documented commands and have valid "when" clauses', () => {
     const allowed = new Set([
-      'obsd.openOrCreateWikiLink',
-      'obsd.insertDate',
-      'obsd.insertTime',
-      'obsd.handleEnterKey',
+      'mdlg.openOrCreateWikiLink',
+      'mdlg.insertDate',
+      'mdlg.insertTime',
+      'mdlg.handleEnterKey',
     ]);
     const bindings: any[] = pkg.contributes?.keybindings || [];
     // all commands are allowed
@@ -57,44 +57,44 @@ describe('Design Conformance (Public Surface)', () => {
       if (kb.when) expect(typeof kb.when).to.equal('string');
     }
     // specific critical context checks per design
-    const enterBinding = bindings.find(b => b.command === 'obsd.handleEnterKey');
+    const enterBinding = bindings.find(b => b.command === 'mdlg.handleEnterKey');
     expect(enterBinding?.when).to.equal("editorTextFocus && editorLangId == 'markdown'");
 
-    const openBinding = bindings.find(b => b.command === 'obsd.openOrCreateWikiLink');
-    expect(openBinding?.when).to.include('obsd.inWikiLink');
+    const openBinding = bindings.find(b => b.command === 'mdlg.openOrCreateWikiLink');
+    expect(openBinding?.when).to.include('mdlg.inWikiLink');
   });
 
   it('configuration keys match documented set and provide defaults', () => {
     const props = pkg.contributes?.configuration?.properties || {};
     const keys = Object.keys(props).sort();
     const expectedKeys = [
-      'obsd.vaultRoot',
-      'obsd.noteExtension',
-      'obsd.slugStrategy',
-      'obsd.dateFormat',
-      'obsd.timeFormat',
-      'obsd.template',
-      'obsd.dailyNoteTemplate',
-      'obsd.dailyNotePath',
-      'obsd.dailyNoteEnabled',
-      'obsd.notesFolder',
-      'obsd.dailyNoteFormat',
-      'obsd.captureSectionName',
-      'obsd.listContinuationEnabled',
-      'obsd.searchSubdirectories',
-      'obsd.dailyNoteKeybindingGuide',
+      'mdlg.vaultRoot',
+      'mdlg.noteExtension',
+      'mdlg.slugStrategy',
+      'mdlg.dateFormat',
+      'mdlg.timeFormat',
+      'mdlg.template',
+      'mdlg.dailyNoteTemplate',
+      'mdlg.dailyNotePath',
+      'mdlg.dailyNoteEnabled',
+      'mdlg.notesFolder',
+      'mdlg.dailyNoteFormat',
+      'mdlg.captureSectionName',
+      'mdlg.listContinuationEnabled',
+      'mdlg.searchSubdirectories',
+      'mdlg.dailyNoteKeybindingGuide',
     ].sort();
     expect(keys).to.deep.equal(expectedKeys);
 
     // Spot-check important defaults to align with docs
-    expect(props['obsd.noteExtension'].default).to.equal('.md');
-    expect(props['obsd.dateFormat'].default).to.be.a('string');
-    expect(props['obsd.timeFormat'].default).to.be.a('string');
-    expect(props['obsd.dailyNoteEnabled'].default).to.equal(true);
-    expect(props['obsd.dailyNotePath'].default).to.equal('dailynotes');
-    expect(props['obsd.notesFolder'].default).to.equal('dailynotes');
-    expect(props['obsd.dailyNoteFormat'].default).to.equal('YYYY-MM-DD.md');
-    expect(props['obsd.captureSectionName'].default).to.be.a('string');
+    expect(props['mdlg.noteExtension'].default).to.equal('.md');
+    expect(props['mdlg.dateFormat'].default).to.be.a('string');
+    expect(props['mdlg.timeFormat'].default).to.be.a('string');
+    expect(props['mdlg.dailyNoteEnabled'].default).to.equal(true);
+    expect(props['mdlg.dailyNotePath'].default).to.equal('dailynotes');
+    expect(props['mdlg.notesFolder'].default).to.equal('dailynotes');
+    expect(props['mdlg.dailyNoteFormat'].default).to.equal('YYYY-MM-DD.md');
+    expect(props['mdlg.captureSectionName'].default).to.be.a('string');
   });
 
   it('views match the documented set', () => {
@@ -102,7 +102,7 @@ describe('Design Conformance (Public Surface)', () => {
     const views = pkg.contributes?.views;
     expect(views).to.exist;
     expect(views?.explorer).to.be.an('array').with.lengthOf(1);
-    expect(views.explorer[0].id).to.equal('obsd.quickCapture');
+    expect(views.explorer[0].id).to.equal('mdlg.quickCapture');
     expect(views.explorer[0].name).to.equal('Quick Capture');
     expect(views.explorer[0].type).to.equal('webview');
   });

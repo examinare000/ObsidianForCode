@@ -1,9 +1,9 @@
 /**
  * @fileoverview Context provider for WikiLink cursor detection in VS Code.
- * Manages the 'obsd.inWikiLink' context variable for conditional command activation
+ * Manages the 'mdlg.inWikiLink' context variable for conditional command activation
  * and UI element visibility based on cursor position within WikiLink syntax.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 
@@ -63,7 +63,7 @@ export class WikiLinkContextProvider {
     }
     
     /**
-     * Updates the 'obsd.inWikiLink' context variable based on cursor position.
+     * Updates the 'mdlg.inWikiLink' context variable based on cursor position.
      * Checks if the cursor is within WikiLink syntax and sets the context accordingly.
      *
      * @param editor - The text editor to check, defaults to active editor
@@ -72,19 +72,19 @@ export class WikiLinkContextProvider {
         editor = editor || vscode.window.activeTextEditor;
 
         if (!editor) {
-            vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', false);
+            vscode.commands.executeCommand('setContext', 'mdlg.inWikiLink', false);
             return;
         }
 
         if (editor.document.languageId !== 'markdown') {
-            vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', false);
+            vscode.commands.executeCommand('setContext', 'mdlg.inWikiLink', false);
             return;
         }
 
         const position = editor.selection.active;
         const inWikiLink = this.isPositionInWikiLink(editor.document, position);
 
-        void vscode.commands.executeCommand('setContext', 'obsd.inWikiLink', inWikiLink);
+        void vscode.commands.executeCommand('setContext', 'mdlg.inWikiLink', inWikiLink);
     }
     
     /**

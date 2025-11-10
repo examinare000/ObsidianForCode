@@ -69,7 +69,7 @@ interface DailyNoteConfig {
 ```
 
 #### 3. コマンド統合
-- コマンド名: `obsd.openDailyNote`
+- コマンド名: `mdlg.openDailyNote`
 - キーバインド: `Ctrl+Shift+D` (Mac: `Cmd+Shift+D`)
 - 既存extension.tsに統合
 
@@ -102,12 +102,12 @@ interface DailyNoteConfig {
 
 ```json
 {
-  "obsd.dailyNoteTemplate": {
+  "mdlg.dailyNoteTemplate": {
     "type": "string",
     "default": "",
     "description": "Daily note template file path (relative to vault root)"
   },
-  "obsd.dailyNotePath": {
+  "mdlg.dailyNotePath": {
     "type": "string",
     "default": "dailynotes",
     "description": "Daily notes directory path (relative to vault root)"

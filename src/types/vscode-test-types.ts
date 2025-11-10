@@ -3,7 +3,7 @@
  * Provides mock interfaces for VS Code API types to enable testing
  * in environments where the actual vscode module is not available.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

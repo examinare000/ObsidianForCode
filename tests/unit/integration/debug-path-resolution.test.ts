@@ -3,13 +3,13 @@ import { expect } from 'chai';
 
 describe('デバッグ: パス解決問題の調査', () => {
     describe('VS Code設定模擬テスト', () => {
-        it('obsd.vaultRootが未設定の場合の動作', () => {
+        it('mdlg.vaultRootが未設定の場合の動作', () => {
             // VS Code設定のモック
             const mockVSCodeConfig = {
                 get<T>(key: string, defaultValue?: T): T {
                     console.log(`[Debug] Config get called with key: "${key}", defaultValue: "${defaultValue}"`);
 
-                    // obsd.vaultRoot が未設定の場合、空文字がデフォルト
+                    // mdlg.vaultRoot が未設定の場合、空文字がデフォルト
                     if (key === 'vaultRoot') {
                         const result = defaultValue || '';
                         console.log(`[Debug] Returning vaultRoot: "${result}"`);
@@ -27,7 +27,7 @@ describe('デバッグ: パス解決問題の調査', () => {
             };
 
             // 実際のワークスペースパス模擬
-            const workspacePath = '/Users/rio/git/ObsidianForCode';
+            const workspacePath = '/Users/rio/git/MDloggerForCode';
             const fileName = 'Simple Page';
 
             // ConfigurationManagerの模擬
@@ -51,7 +51,7 @@ describe('デバッグ: パス解決問題の調査', () => {
             console.log(`[Debug] resolvedPath: "${resolvedPath}"`);
 
             // 検証
-            expect(resolvedPath).to.equal('/Users/rio/git/ObsidianForCode/Simple Page.md');
+            expect(resolvedPath).to.equal('/Users/rio/git/MDloggerForCode/Simple Page.md');
             expect(resolvedPath).to.not.equal('/Simple Page.md'); // ルートディレクトリ作成を避ける
         });
 
@@ -130,13 +130,13 @@ describe('デバッグ: パス解決問題の調査', () => {
                 },
                 {
                     name: 'Scenario 2: vaultRoot is root directory',
-                    workspaceFolder: { uri: { fsPath: '/Users/rio/git/ObsidianForCode' } },
+                    workspaceFolder: { uri: { fsPath: '/Users/rio/git/MDloggerForCode' } },
                     vaultRoot: '/',
                     expectedError: true
                 },
                 {
                     name: 'Scenario 3: Normal case (should work)',
-                    workspaceFolder: { uri: { fsPath: '/Users/rio/git/ObsidianForCode' } },
+                    workspaceFolder: { uri: { fsPath: '/Users/rio/git/MDloggerForCode' } },
                     vaultRoot: '',
                     expectedError: false
                 }

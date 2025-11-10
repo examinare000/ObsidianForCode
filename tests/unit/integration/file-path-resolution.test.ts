@@ -79,7 +79,7 @@ describe('ファイルパス解決テスト', () => {
 
         it('現在のエラーケース: ConfigurationManagerでvaultRootが空の場合', () => {
             // ユーザーが設定していない場合のデフォルト動作
-            const workspacePath = '/Users/rio/git/ObsidianForCode';
+            const workspacePath = '/Users/rio/git/MDloggerForCode';
             const vaultRoot = ''; // 設定が空
             const fileName = 'Simple Page';
             const extension = '.md';
@@ -87,7 +87,7 @@ describe('ファイルパス解決テスト', () => {
             const actualPath = resolveFilePath(workspacePath, vaultRoot, fileName, extension);
 
             // 期待値：ワークスペース内のファイル
-            expect(actualPath).to.equal('/Users/rio/git/ObsidianForCode/Simple Page.md');
+            expect(actualPath).to.equal('/Users/rio/git/MDloggerForCode/Simple Page.md');
             // 絶対にルートディレクトリではない
             expect(actualPath).to.not.equal('/Simple Page.md');
         });

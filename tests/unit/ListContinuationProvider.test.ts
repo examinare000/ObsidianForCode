@@ -2,7 +2,7 @@
  * @fileoverview Unit tests for ListContinuationProvider.
  * Tests automatic list and checkbox continuation functionality.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 
@@ -121,7 +121,7 @@ describe('ListContinuationProvider', () => {
 
     beforeEach(() => {
         // Use global mock from setup.ts
-        const config = vscode.workspace.getConfiguration('obsd');
+        const config = vscode.workspace.getConfiguration('mdlg');
         const configManager = new ConfigurationManager(config);
         provider = new ListContinuationProvider(configManager);
     });

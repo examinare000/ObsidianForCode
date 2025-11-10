@@ -5,14 +5,14 @@ import { TaskService } from '../services/TaskService';
 import { VscodeFileWriter } from '../services/FileWriter';
 
 export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
-    public static readonly viewId = 'obsd.quickCapture';
+    public static readonly viewId = 'mdlg.quickCapture';
     private view?: vscode.WebviewView;
     private taskServiceInstance?: TaskService;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly configManager: ConfigurationManager,
-        private readonly dailyNoteManager?: DailyNoteManager
+        private readonly dailyNoteManager: DailyNoteManager
     ) {}
 
   private get taskService(): TaskService {
@@ -55,11 +55,6 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
                         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                         if (!workspaceFolder) {
                             webviewView.webview.postMessage({ command: 'error', message: 'No workspace open' });
-                            return;
-                        }
-
-                        if (!this.dailyNoteManager) {
-                            webviewView.webview.postMessage({ command: 'error', message: 'DailyNoteManager unavailable' });
                             return;
                         }
 

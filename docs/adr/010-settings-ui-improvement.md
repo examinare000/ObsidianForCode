@@ -24,7 +24,7 @@ ADR-009で実装した設定可能なDailyNote機能において、Extension Set
 ```json
 // 変更前（問題のある設計）
 {
-  "obsd.dailyNoteKeybinding": {
+  "mdlg.dailyNoteKeybinding": {
     "type": "string",
     "default": "ctrl+shift+d",
     "description": "Preferred keyboard shortcut for opening daily note..."
@@ -33,12 +33,12 @@ ADR-009で実装した設定可能なDailyNote機能において、Extension Set
 
 // 変更後（改善された設計）
 {
-  "obsd.dailyNoteKeybindingGuide": {
+  "mdlg.dailyNoteKeybindingGuide": {
     "type": "string",
     "default": "Follow the steps below",
     "readonly": true,
     "description": "How to configure DailyNote keyboard shortcut",
-    "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\n\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search for `obsd.openDailyNote`\n4. Click the `+` icon to set your preferred key combination\n\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\n\n*This setting is for guidance only and cannot be edited.*"
+    "markdownDescription": "**How to configure DailyNote keyboard shortcut:**\n\n1. Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)\n2. Type `Preferences: Open Keyboard Shortcuts`\n3. Search for `mdlg.openDailyNote`\n4. Click the `+` icon to set your preferred key combination\n\n**Default suggestion:** `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (Mac)\n\n*This setting is for guidance only and cannot be edited.*"
   }
 }
 ```
@@ -161,3 +161,4 @@ it('should validate UI guidance settings', () => {
 **実装日**: 2025-09-18
 **関連ADR**: ADR-009 (設定可能なDailyNote機能)
 **影響範囲**: Settings UI, ConfigurationManager, テストケース
+

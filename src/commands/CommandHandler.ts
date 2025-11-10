@@ -1,9 +1,9 @@
 /**
- * @fileoverview Command handler for Obsidian for Code extension commands.
+ * @fileoverview Command handler for MDloggerForCode extension commands.
  * Provides a centralized handler for WikiLink operations, date/time insertion,
  * and preview functionality with testable interfaces.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

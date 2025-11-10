@@ -3,7 +3,7 @@
  * Provides functionality to find notes by title with exact match support
  * for subdirectory traversal.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

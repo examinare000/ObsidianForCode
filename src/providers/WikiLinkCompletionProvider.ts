@@ -3,7 +3,7 @@
  * Provides intelligent autocomplete suggestions for WikiLink references
  * based on existing notes in the workspace.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

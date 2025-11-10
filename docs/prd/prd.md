@@ -37,13 +37,13 @@ DocumentLinkProvider：[[...]]をリンク化（クリックで開く/作る）
 
 コマンド：
 
-- obsd.openOrCreateWikiLink（Wikiリンクへ移動/作成）
+- mdlg.openOrCreateWikiLink（Wikiリンクへ移動/作成）
 
-- obsd.insertDate / obsd.insertTime（挿入）
+- mdlg.insertDate / mdlg.insertTime（挿入）
 
-- obsd.preview（Webviewで軽量プレビュー） 
+- mdlg.preview（Webviewで軽量プレビュー） 
 
-- キー操作：Ctrl/Cmd+Enterは**「カーソルがWikiリンク内」**のときだけ有効（独自コンテキストobsd.inWikiLinkで制御）。
+- キー操作：Ctrl/Cmd+Enterは**「カーソルがWikiリンク内」**のときだけ有効（独自コンテキストmdlg.inWikiLinkで制御）。
 
 - ファイル操作：workspace.fsでノート作成・読み書き（RemoteでもOK）。
 
@@ -51,15 +51,15 @@ DocumentLinkProvider：[[...]]をリンク化（クリックで開く/作る）
 
 # 設定（例）
 
-- obsd.vaultRoot（Vaultのルート/既定はワークスペース）
+- mdlg.vaultRoot（Vaultのルート/既定はワークスペース）
 
-- obsd.noteExtension（既定.md）
+- mdlg.noteExtension（既定.md）
 
-- obsd.slugStrategy（passthrough|kebab-case|snake_case）
+- mdlg.slugStrategy（passthrough|kebab-case|snake_case）
 
-- obsd.dateFormat / obsd.timeFormat（YYYY-MM-DD / HH:mm）
+- mdlg.dateFormat / mdlg.timeFormat（YYYY-MM-DD / HH:mm）
 
-- obsd.template（新規ノート1行目テンプレ）
+- mdlg.template（新規ノート1行目テンプレ）
 
 # UXの要点
 

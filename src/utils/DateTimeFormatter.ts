@@ -1,9 +1,9 @@
 /**
- * @fileoverview Date and time formatting utilities for Obsidian for Code extension.
+ * @fileoverview Date and time formatting utilities for MDloggerForCode extension.
  * Provides flexible date/time formatting with custom token support, validation,
  * and extensible formatter registration for various output formats.
  *
- * @author ObsidianForCode Team
+ * @author MDloggerForCode Team
  * @version 1.0.0
  */
 

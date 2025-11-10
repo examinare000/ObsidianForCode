@@ -66,7 +66,7 @@ class MockWorkspaceConfiguration {
             (0, chai_1.expect)(extension).to.equal('.md');
         });
         (0, mocha_1.it)('カスタムnoteExtension値を取得できる', () => {
-            mockConfig.update('obsd.noteExtension', '.txt');
+            mockConfig.update('mdlg.noteExtension', '.txt');
             const extension = configManager.getNoteExtension();
             (0, chai_1.expect)(extension).to.equal('.txt');
         });
@@ -75,7 +75,7 @@ class MockWorkspaceConfiguration {
             (0, chai_1.expect)(strategy).to.equal('passthrough');
         });
         (0, mocha_1.it)('無効なslugStrategyの場合デフォルト値を返す', () => {
-            mockConfig.update('obsd.slugStrategy', 'invalid-strategy');
+            mockConfig.update('mdlg.slugStrategy', 'invalid-strategy');
             const strategy = configManager.getSlugStrategy();
             (0, chai_1.expect)(strategy).to.equal('passthrough');
         });
@@ -90,7 +90,7 @@ class MockWorkspaceConfiguration {
             (0, chai_1.expect)(format).to.equal('HH:mm');
         });
         (0, mocha_1.it)('カスタム日付フォーマットを取得できる', () => {
-            mockConfig.update('obsd.dateFormat', 'DD/MM/YYYY');
+            mockConfig.update('mdlg.dateFormat', 'DD/MM/YYYY');
             const format = configManager.getDateFormat();
             (0, chai_1.expect)(format).to.equal('DD/MM/YYYY');
         });
@@ -101,7 +101,7 @@ class MockWorkspaceConfiguration {
             (0, chai_1.expect)(template).to.equal('# {{title}}\n\n');
         });
         (0, mocha_1.it)('空のテンプレートを処理できる', () => {
-            mockConfig.update('obsd.template', '');
+            mockConfig.update('mdlg.template', '');
             const template = configManager.getTemplate();
             (0, chai_1.expect)(template).to.equal('');
         });
@@ -169,7 +169,7 @@ class MockWorkspaceConfiguration {
                 callbackConfig = config;
             });
             // 設定変更をシミュレート
-            mockConfig.update('obsd.vaultRoot', '/new/vault');
+            mockConfig.update('mdlg.vaultRoot', '/new/vault');
             configManager.triggerConfigurationChanged(); // テスト用メソッド
             (0, chai_1.expect)(callbackCalled).to.be.true;
             (0, chai_1.expect)(callbackConfig.vaultRoot).to.equal('/new/vault');
