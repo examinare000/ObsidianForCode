@@ -102,6 +102,36 @@ export class DailyNoteManager {
     }
 
     /**
+     * Resolves the directory URI containing all daily notes.
+     * Mirrors getDailyNotePath logic but without appending the file name so other
+     * features (e.g. task collection) can scope operations to the configured folder.
+     *
+     * @param workspaceFolder - The VS Code workspace folder
+     * @returns URI pointing to the daily note directory
+     */
+    getDailyNoteDirectory(workspaceFolder: vscode.WorkspaceFolder): vscode.Uri {
+        const dailyNotePath = this.configManager.getDailyNotePath();
+        const vaultRoot = this.configManager.getVaultRoot();
+
+        if (vaultRoot && vaultRoot.trim() !== '') {
+            if (vaultRoot.startsWith('/') || vaultRoot.match(/^[A-Za-z]:/)) {
+                const scheme = workspaceFolder.uri.scheme;
+                if (scheme === 'file') {
+                    return vscode.Uri.file(`${vaultRoot}/${dailyNotePath}`);
+                } else {
+                    const normalizedVaultRoot = this.normalizeAbsolutePath(vaultRoot);
+                    const fullPath = `${normalizedVaultRoot}/${dailyNotePath}`;
+                    return workspaceFolder.uri.with({ path: fullPath });
+                }
+            } else {
+                return vscode.Uri.joinPath(workspaceFolder.uri, vaultRoot, dailyNotePath);
+            }
+        }
+
+        return vscode.Uri.joinPath(workspaceFolder.uri, dailyNotePath);
+    }
+
+    /**
      * Loads template content from the configured template file.
      * Attempts to read the daily note template file and returns its content.
      * Returns empty string if template file is not found or not configured.

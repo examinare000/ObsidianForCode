@@ -72,8 +72,9 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
                 return;
               }
 
-              // Use a simple glob to list markdown files under workspace/dailynotes
-              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri, '**/*.md'), '**/node_modules/**', 200);
+              // Restrict search to the configured daily note directory
+              const dailyNoteDir = this.dailyNoteManager.getDailyNoteDirectory(workspaceFolder);
+              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(dailyNoteDir, '**/*.md'), '**/node_modules/**', 200);
               const tasks = await this.taskService.collectTasksFromUris(files);
               webviewView.webview.postMessage({ command: 'tasks:update', tasks });
             } catch (err) {
@@ -100,7 +101,8 @@ export class QuickCaptureSidebarProvider implements vscode.WebviewViewProvider {
                 webviewView.webview.postMessage({ command: 'tasks:update', tasks: [] });
                 return;
               }
-              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(workspaceFolder.uri, '**/*.md'), '**/node_modules/**', 200);
+              const dailyNoteDir = this.dailyNoteManager.getDailyNoteDirectory(workspaceFolder);
+              const files = await vscode.workspace.findFiles(new vscode.RelativePattern(dailyNoteDir, '**/*.md'), '**/node_modules/**', 200);
               const tasks = await this.taskService.collectTasksFromUris(files);
               webviewView.webview.postMessage({ command: 'tasks:update', tasks });
             } catch (err) {
